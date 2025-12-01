@@ -1,0 +1,12 @@
+{
+  "hotkeys": {
+    "pin": {
+      "modifiers": "Shift, Alt",
+      "key": "T"
+    },
+    "unpin": {
+      "modifiers": "Control, Alt",
+      "key": "T"
+    }
+  }
+}
