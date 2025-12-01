@@ -11,7 +11,7 @@ import threading
 import uuid
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 
 def _utcnow() -> datetime:
@@ -72,9 +72,22 @@ class Session:
             user_id=data["user_id"],
             data=data.get("data", {}),
         )
-        session.created_at = datetime.fromisoformat(data["created_at"])
-        session.last_accessed = datetime.fromisoformat(data["last_accessed"])
-        session.expires_at = datetime.fromisoformat(data["expires_at"])
+        # Parse datetime strings and ensure they're timezone-aware
+        created_at = datetime.fromisoformat(data["created_at"])
+        last_accessed = datetime.fromisoformat(data["last_accessed"])
+        expires_at = datetime.fromisoformat(data["expires_at"])
+        
+        # If timezone info is missing, assume UTC
+        if created_at.tzinfo is None:
+            created_at = created_at.replace(tzinfo=timezone.utc)
+        if last_accessed.tzinfo is None:
+            last_accessed = last_accessed.replace(tzinfo=timezone.utc)
+        if expires_at.tzinfo is None:
+            expires_at = expires_at.replace(tzinfo=timezone.utc)
+        
+        session.created_at = created_at
+        session.last_accessed = last_accessed
+        session.expires_at = expires_at
         return session
 
 
@@ -236,7 +249,7 @@ class SessionManager:
                 return True
             return False
 
-    def get_user_sessions(self, user_id: str) -> list[Session]:
+    def get_user_sessions(self, user_id: str) -> List[Session]:
         """
         Get all sessions for a user.
 
