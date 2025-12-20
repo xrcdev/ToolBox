@@ -1,3 +1,9 @@
 <Solution>
+  <Project Path="AlwaysOnTop.WPF/AlwaysOnTop.WPF.csproj" />
   <Project Path="AlwaysOnTop/AlwaysOnTop.csproj" Id="ae7d8f07-cb02-4be4-9f6c-a4e386223ca2" />
+  <Project Path="CopyFiles/CopyFiles.csproj" />
+  <Project Path="CopyFilesConsole/CopyFilesConsole.csproj" />
+  <Project Path="DirSizeStat/DirSizeStat.csproj" Id="b61ba996-3817-4b27-998c-4b5b6ccd81dd" />
+  <Project Path="MyTimeManagement/MyTimeManagement.csproj" Id="fed2464d-d33a-4383-a28d-b03a4c4a2d67" />
+  <Project Path="PdfSplitter/PdfSplitter.csproj" />
 </Solution>

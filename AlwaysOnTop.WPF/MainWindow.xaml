@@ -1,0 +1,26 @@
+﻿<Window x:Class="AlwaysOnTop.WPF.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:AlwaysOnTop.WPF"
+        mc:Ignorable="d"
+        Title="Always On Top Manager" Height="450" Width="800">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <StackPanel Orientation="Horizontal" Margin="5">
+            <Button Content="Refresh" Click="RefreshButton_Click" Padding="5,2"/>
+            <TextBlock Text="Global Hotkey: Ctrl + Shift + 3 (Toggle TopMost for Active Window)" VerticalAlignment="Center" Margin="10,0,0,0"/>
+        </StackPanel>
+        <DataGrid x:Name="WindowsGrid" Grid.Row="1" AutoGenerateColumns="False" IsReadOnly="True">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Title" Binding="{Binding Title}" Width="*"/>
+                <DataGridCheckBoxColumn Header="Always On Top" Binding="{Binding IsTopMost}" Width="120"/>
+                <DataGridTextColumn Header="Handle" Binding="{Binding Handle}" Width="100"/>
+            </DataGrid.Columns>
+        </DataGrid>
+    </Grid>
+</Window>
