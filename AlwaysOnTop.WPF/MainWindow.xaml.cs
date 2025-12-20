@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Interop;
 
 namespace AlwaysOnTop.WPF;
@@ -78,6 +79,15 @@ public partial class MainWindow : Window
             
             // Refresh the list to reflect changes
             RefreshWindows();
+        }
+    }
+
+    private void TopMostCheckBox_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is CheckBox checkBox && checkBox.DataContext is WindowInfo windowInfo)
+        {
+            bool isTop = checkBox.IsChecked == true;
+            WindowServices.SetTopMost(windowInfo.Handle, isTop);
         }
     }
 

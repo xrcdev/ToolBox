@@ -15,11 +15,19 @@
             <Button Content="Refresh" Click="RefreshButton_Click" Padding="5,2"/>
             <TextBlock Text="Global Hotkey: Ctrl + Shift + 3 (Toggle TopMost for Active Window)" VerticalAlignment="Center" Margin="10,0,0,0"/>
         </StackPanel>
-        <DataGrid x:Name="WindowsGrid" Grid.Row="1" AutoGenerateColumns="False" IsReadOnly="True">
+        <DataGrid x:Name="WindowsGrid" Grid.Row="1" AutoGenerateColumns="False" IsReadOnly="False">
             <DataGrid.Columns>
-                <DataGridTextColumn Header="Title" Binding="{Binding Title}" Width="*"/>
-                <DataGridCheckBoxColumn Header="Always On Top" Binding="{Binding IsTopMost}" Width="120"/>
-                <DataGridTextColumn Header="Handle" Binding="{Binding Handle}" Width="100"/>
+                <DataGridTextColumn Header="Title" Binding="{Binding Title}" Width="*" IsReadOnly="True"/>
+                <DataGridTemplateColumn Header="Always On Top" Width="120">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <CheckBox IsChecked="{Binding IsTopMost, UpdateSourceTrigger=PropertyChanged}" 
+                                      Click="TopMostCheckBox_Click"
+                                      HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTextColumn Header="Handle" Binding="{Binding Handle}" Width="100" IsReadOnly="True"/>
             </DataGrid.Columns>
         </DataGrid>
     </Grid>
