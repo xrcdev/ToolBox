@@ -1,0 +1,87 @@
+﻿<Window x:Class="FileSplitterAndMerge.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:FileSplitterAndMerge"
+        mc:Ignorable="d"
+        Title="大文件分割与合并工具" Height="400" Width="600" ResizeMode="CanMinimize">
+    <Grid Margin="10">
+        <TabControl>
+            <!-- 分割功能 -->
+            <TabItem Header="文件分割">
+                <Grid Margin="10">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- 源文件 -->
+                    <TextBlock Text="源文件:" VerticalAlignment="Center" Grid.Row="0" Grid.Column="0" Margin="0,0,10,10"/>
+                    <TextBox x:Name="TxtSplitSourceFile" Grid.Row="0" Grid.Column="1" Margin="0,0,10,10" IsReadOnly="True"/>
+                    <Button Content="浏览..." Grid.Row="0" Grid.Column="2" Width="75" Margin="0,0,0,10" Click="BtnBrowseSplitSource_Click"/>
+
+                    <!-- 输出目录 -->
+                    <TextBlock Text="输出目录:" VerticalAlignment="Center" Grid.Row="1" Grid.Column="0" Margin="0,0,10,10"/>
+                    <TextBox x:Name="TxtSplitOutputDir" Grid.Row="1" Grid.Column="1" Margin="0,0,10,10" IsReadOnly="True"/>
+                    <Button Content="浏览..." Grid.Row="1" Grid.Column="2" Width="75" Margin="0,0,0,10" Click="BtnBrowseSplitOutput_Click"/>
+
+                    <!-- 分块大小 -->
+                    <TextBlock Text="分块大小 (MB):" VerticalAlignment="Center" Grid.Row="2" Grid.Column="0" Margin="0,0,10,10"/>
+                    <TextBox x:Name="TxtChunkSize" Grid.Row="2" Grid.Column="1" Margin="0,0,10,10" Text="100"/>
+                    
+                    <!-- 按钮 -->
+                    <Button x:Name="BtnStartSplit" Content="开始分割" Grid.Row="3" Grid.Column="1" Width="100" Height="30" HorizontalAlignment="Left" Click="BtnStartSplit_Click"/>
+
+                    <!-- 状态 -->
+                    <TextBlock x:Name="TxtSplitStatus" Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="3" VerticalAlignment="Bottom" Margin="0,10"/>
+                    <ProgressBar x:Name="PbSplit" Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="3" Height="20"/>
+                </Grid>
+            </TabItem>
+
+            <!-- 合并功能 -->
+            <TabItem Header="文件合并">
+                <Grid Margin="10">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- 第一块文件 -->
+                    <TextBlock Text="首个分块文件:" VerticalAlignment="Center" Grid.Row="0" Grid.Column="0" Margin="0,0,10,10" ToolTip="选择 .part1 或 .001 文件"/>
+                    <TextBox x:Name="TxtMergeSourceFile" Grid.Row="0" Grid.Column="1" Margin="0,0,10,10" IsReadOnly="True"/>
+                    <Button Content="浏览..." Grid.Row="0" Grid.Column="2" Width="75" Margin="0,0,0,10" Click="BtnBrowseMergeSource_Click"/>
+
+                    <!-- 输出文件 -->
+                    <TextBlock Text="保存为:" VerticalAlignment="Center" Grid.Row="1" Grid.Column="0" Margin="0,0,10,10"/>
+                    <TextBox x:Name="TxtMergeOutputFile" Grid.Row="1" Grid.Column="1" Margin="0,0,10,10" IsReadOnly="True"/>
+                    <Button Content="浏览..." Grid.Row="1" Grid.Column="2" Width="75" Margin="0,0,0,10" Click="BtnBrowseMergeOutput_Click"/>
+
+                    <!-- 按钮 -->
+                    <Button x:Name="BtnStartMerge" Content="开始合并" Grid.Row="2" Grid.Column="1" Width="100" Height="30" HorizontalAlignment="Left" Click="BtnStartMerge_Click"/>
+
+                    <!-- 状态 -->
+                    <TextBlock x:Name="TxtMergeStatus" Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="3" VerticalAlignment="Bottom" Margin="0,10"/>
+                    <ProgressBar x:Name="PbMerge" Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="3" Height="20"/>
+                </Grid>
+            </TabItem>
+        </TabControl>
+    </Grid>
+</Window>
