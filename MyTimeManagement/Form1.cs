@@ -10,6 +10,8 @@ namespace MyTimeManagement
     public partial class Form1 : Form
     {
         private readonly Timer _halfHourTimer;
+        private readonly Timer _alarmTimer;
+        private bool _isAlarmSet = false;
 
         // Win32 用于前置窗口
         [DllImport("user32.dll")]
@@ -28,6 +30,10 @@ namespace MyTimeManagement
             _halfHourTimer.Interval = 30 * 60 * 1000; // 30分钟
             //_halfHourTimer.Interval = 3* 1000; // 30分钟
             _halfHourTimer.Tick += HalfHourTimer_Tick;
+
+            _alarmTimer = new Timer();
+            _alarmTimer.Interval = 1000; // Check every second
+            _alarmTimer.Tick += AlarmTimer_Tick;
         }
 
         private void btnStart_Click(object sender, EventArgs e)
@@ -51,6 +57,48 @@ namespace MyTimeManagement
                 "提醒",
                 MessageBoxButtons.OK,
                 MessageBoxIcon.Information);
+        }
+
+        private void btnToggleAlarm_Click(object sender, EventArgs e)
+        {
+            if (_isAlarmSet)
+            {
+                _alarmTimer.Stop();
+                _isAlarmSet = false;
+                btnToggleAlarm.Text = "开启提醒";
+                lblAlarmStatus.Text = "当前状态: 未开启";
+                lblAlarmStatus.ForeColor = System.Drawing.Color.Gray;
+                dtpAlarmTime.Enabled = true;
+            }
+            else
+            {
+                _alarmTimer.Start();
+                _isAlarmSet = true;
+                btnToggleAlarm.Text = "停止提醒";
+                lblAlarmStatus.Text = $"当前状态: 已开启 (将在 {dtpAlarmTime.Value:HH:mm:ss} 提醒)";
+                lblAlarmStatus.ForeColor = System.Drawing.Color.Green;
+                dtpAlarmTime.Enabled = false;
+            }
+        }
+
+        private void AlarmTimer_Tick(object sender, EventArgs e)
+        {
+            var now = DateTime.Now;
+            var target = dtpAlarmTime.Value;
+
+            // 检查时分秒是否匹配 (假设秒数为0触发)
+            if (now.Hour == target.Hour && now.Minute == target.Minute && now.Second == 0)
+            {
+                BringAppToFront();
+                
+                // 切换到提醒选项卡
+                if (tabControl1.SelectedTab != tabPage2)
+                {
+                    tabControl1.SelectedTab = tabPage2;
+                }
+
+                MessageBox.Show(this, "预设的时间到了！", "提醒", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
         }
 
         private void BringAppToFront()
