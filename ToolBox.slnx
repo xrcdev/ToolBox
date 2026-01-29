@@ -7,4 +7,5 @@
   <Project Path="FileSplitterAndMerge/FileSplitterAndMerge.csproj" Id="8d59f4d9-649c-41fa-ac43-29835334c1ae" />
   <Project Path="MyTimeManagement/MyTimeManagement.csproj" Id="fed2464d-d33a-4383-a28d-b03a4c4a2d67" />
   <Project Path="PdfSplitter/PdfSplitter.csproj" />
+  <Project Path="RemoveFileReadonlyAttribute/RemoveFileReadonlyAttribute.csproj" Id="b53927d2-d9c3-421a-838b-d719cee9a599" />
 </Solution>
