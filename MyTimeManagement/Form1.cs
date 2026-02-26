@@ -138,15 +138,16 @@ namespace MyTimeManagement
 
             try
             {
-                var dir = @"E:\Doc\obnote\7老码农的日常\2025";
+                var dir = @"E:\Doc\obnote\7老码农的日常\"+DateTime.Now.Year.ToString();
                 Directory.CreateDirectory(dir);
 
-                // 文件名：2025{yyyy-MM-dd}.txt —— 按你的要求拼接
-                var fileName = DateTime.Now.ToString("yyyy-MM-dd") + ".md";
+                // 文件名：2025{yyyy-MM-dd}.txt —— 按你的要求拼接 2026年2月26日
+                var fileName = DateTime.Now.ToString("yyyy-M-d") + ".md";
                 var filePath = Path.Combine(dir, fileName);
 
                 using (var sw = new StreamWriter(filePath, true, Encoding.UTF8))
                 {
+                    sw.WriteLine(Environment.NewLine);
                     sw.WriteLine("【{0:yyyy-MM-dd HH:mm:ss}】 \r\n {1}", DateTime.Now, text.Trim());
                 }
 
