@@ -28,6 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
+            this.components = new System.ComponentModel.Container();
             this.btnStart = new System.Windows.Forms.Button();
             this.txtInput = new System.Windows.Forms.TextBox();
             this.btnSave = new System.Windows.Forms.Button();
@@ -38,9 +39,14 @@
             this.btnToggleAlarm = new System.Windows.Forms.Button();
             this.lblAlarmStatus = new System.Windows.Forms.Label();
             this.label1 = new System.Windows.Forms.Label();
+            this.notifyIcon1 = new System.Windows.Forms.NotifyIcon(this.components);
+            this.trayMenu = new System.Windows.Forms.ContextMenuStrip(this.components);
+            this.trayMenuOpen = new System.Windows.Forms.ToolStripMenuItem();
+            this.trayMenuExit = new System.Windows.Forms.ToolStripMenuItem();
             this.tabControl1.SuspendLayout();
             this.tabPage1.SuspendLayout();
             this.tabPage2.SuspendLayout();
+            this.trayMenu.SuspendLayout();
             this.SuspendLayout();
             // 
             // tabControl1
@@ -154,6 +160,34 @@
             this.lblAlarmStatus.TabIndex = 3;
             this.lblAlarmStatus.Text = "当前状态: 未开启";
             // 
+            // notifyIcon1
+            // 
+            this.notifyIcon1.Text = "MyTimeManagement";
+            this.notifyIcon1.Visible = true;
+            this.notifyIcon1.DoubleClick += new System.EventHandler(this.notifyIcon1_DoubleClick);
+            // 
+            // trayMenu
+            // 
+            this.trayMenu.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.trayMenuOpen,
+            this.trayMenuExit});
+            this.trayMenu.Name = "trayMenu";
+            this.trayMenu.Size = new System.Drawing.Size(101, 48);
+            // 
+            // trayMenuOpen
+            // 
+            this.trayMenuOpen.Name = "trayMenuOpen";
+            this.trayMenuOpen.Size = new System.Drawing.Size(100, 22);
+            this.trayMenuOpen.Text = "打开";
+            this.trayMenuOpen.Click += new System.EventHandler(this.trayMenuOpen_Click);
+            // 
+            // trayMenuExit
+            // 
+            this.trayMenuExit.Name = "trayMenuExit";
+            this.trayMenuExit.Size = new System.Drawing.Size(100, 22);
+            this.trayMenuExit.Text = "退出";
+            this.trayMenuExit.Click += new System.EventHandler(this.trayMenuExit_Click);
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
@@ -163,11 +197,13 @@
             this.Name = "Form1";
             this.Text = "MyTimeManagement";
             this.Load += new System.EventHandler(this.Form1_Load);
+            this.Resize += new System.EventHandler(this.Form1_Resize);
             this.tabControl1.ResumeLayout(false);
             this.tabPage1.ResumeLayout(false);
             this.tabPage1.PerformLayout();
             this.tabPage2.ResumeLayout(false);
             this.tabPage2.PerformLayout();
+            this.trayMenu.ResumeLayout(false);
             this.ResumeLayout(false);
 
         }
@@ -184,5 +220,9 @@
         private System.Windows.Forms.Button btnToggleAlarm;
         private System.Windows.Forms.Label lblAlarmStatus;
         private System.Windows.Forms.Label label1;
+        private System.Windows.Forms.NotifyIcon notifyIcon1;
+        private System.Windows.Forms.ContextMenuStrip trayMenu;
+        private System.Windows.Forms.ToolStripMenuItem trayMenuOpen;
+        private System.Windows.Forms.ToolStripMenuItem trayMenuExit;
     }
 }

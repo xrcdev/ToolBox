@@ -4,6 +4,7 @@ using System.IO;
 using System.Text;
 using System.Windows.Forms;
 using System.Runtime.InteropServices;
+using System.Drawing;
 
 namespace MyTimeManagement
 {
@@ -12,6 +13,8 @@ namespace MyTimeManagement
         private readonly Timer _halfHourTimer;
         private readonly Timer _alarmTimer;
         private bool _isAlarmSet = false;
+        private Icon _trayIcon;
+        private IntPtr _trayIconHandle = IntPtr.Zero;
 
         // Win32 用于前置窗口
         [DllImport("user32.dll")]
@@ -20,12 +23,19 @@ namespace MyTimeManagement
         [DllImport("user32.dll")]
         private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
 
+        [DllImport("user32.dll", SetLastError = true)]
+        private static extern bool DestroyIcon(IntPtr hIcon);
+
         private const int SW_RESTORE = 9;
 
         public Form1()
         {
             InitializeComponent();
 
+            _trayIcon = CreateTrayIcon();
+            notifyIcon1.Icon = _trayIcon;
+            notifyIcon1.ContextMenuStrip = trayMenu;
+            this.Icon = _trayIcon;
             _halfHourTimer = new Timer();
             _halfHourTimer.Interval = 30 * 60 * 1000; // 30分钟
             //_halfHourTimer.Interval = 3* 1000; // 30分钟
@@ -187,6 +197,79 @@ namespace MyTimeManagement
             catch
             {
                 //忽略读取失败的异常
+            }
+        }
+
+        protected override void OnFormClosed(FormClosedEventArgs e)
+        {
+            notifyIcon1.Visible = false;
+            if (_trayIconHandle != IntPtr.Zero)
+            {
+                DestroyIcon(_trayIconHandle);
+                _trayIconHandle = IntPtr.Zero;
+            }
+            if (_trayIcon != null)
+            {
+                _trayIcon.Dispose();
+                _trayIcon = null;
+            }
+            base.OnFormClosed(e);
+        }
+
+        private void Form1_Resize(object sender, EventArgs e)
+        {
+            if (WindowState == FormWindowState.Minimized)
+            {
+                Hide();
+                notifyIcon1.BalloonTipTitle = "MyTimeManagement";
+                notifyIcon1.BalloonTipText = "已最小化到托盘";
+                notifyIcon1.ShowBalloonTip(1000);
+            }
+        }
+
+        private void notifyIcon1_DoubleClick(object sender, EventArgs e)
+        {
+            ShowFromTray();
+        }
+
+        private void trayMenuOpen_Click(object sender, EventArgs e)
+        {
+            ShowFromTray();
+        }
+
+        private void trayMenuExit_Click(object sender, EventArgs e)
+        {
+            notifyIcon1.Visible = false;
+            Close();
+        }
+
+        private void ShowFromTray()
+        {
+            Show();
+            WindowState = FormWindowState.Normal;
+            BringAppToFront();
+        }
+
+        private Icon CreateTrayIcon()
+        {
+            using (var bitmap = new Bitmap(16, 16))
+            using (var g = Graphics.FromImage(bitmap))
+            using (var faceBrush = new SolidBrush(Color.White))
+            using (var borderPen = new Pen(Color.FromArgb(0, 120, 215), 2))
+            using (var handPen = new Pen(Color.FromArgb(0, 120, 215), 2))
+            {
+                g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+                g.Clear(Color.Transparent);
+
+                g.FillEllipse(faceBrush, 2, 2, 12, 12);
+                g.DrawEllipse(borderPen, 2, 2, 12, 12);
+
+                g.DrawLine(handPen, 8, 8, 8, 4);
+                g.DrawLine(handPen, 8, 8, 11, 9);
+
+                _trayIconHandle = bitmap.GetHicon();
+                bitmap.Save("tray_icon.png"); // 可选：保存生成的图标以供调试查看
+                return Icon.FromHandle(_trayIconHandle);
             }
         }
     }
