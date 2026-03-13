@@ -107,7 +107,12 @@ namespace MyTimeManagement
                     tabControl1.SelectedTab = tabPage2;
                 }
 
-                MessageBox.Show(this, "预设的时间到了！", "提醒", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                var alarmContent = txtAlarmContent.Text.Trim();
+                var message = string.IsNullOrWhiteSpace(alarmContent)
+                    ? "预设的时间到了！"
+                    : "预设的时间到了！" + Environment.NewLine + Environment.NewLine + "提醒内容：" + alarmContent;
+
+                MessageBox.Show(this, message, "提醒", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
         }
 

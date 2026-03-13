@@ -22,10 +22,14 @@ public partial class MainWindow : Window
     private WinForms.NotifyIcon? _notifyIcon;
     private WinForms.ContextMenuStrip? _trayMenu;
     private Drawing.Icon? _appIcon;
-    private readonly string _presetFilePath = Path.Combine(
+    private readonly string _appPresetFilePath = Path.Combine(
+        AppContext.BaseDirectory,
+        "presets.json");
+    private readonly string _systemPresetFilePath = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
         "AdjustUISize",
         "presets.json");
+    private string? _currentPresetFilePath;
 
     public ObservableCollection<WindowSizePreset> Presets { get; } = new();
 
@@ -247,11 +251,14 @@ public partial class MainWindow : Window
 
     private void LoadPresets()
     {
-        if (File.Exists(_presetFilePath))
+        var presetFilePath = GetPreferredPresetFilePath();
+        _currentPresetFilePath = presetFilePath;
+
+        if (File.Exists(presetFilePath))
         {
             try
             {
-                var json = File.ReadAllText(_presetFilePath);
+                var json = File.ReadAllText(presetFilePath);
                 var presets = JsonSerializer.Deserialize<WindowSizePreset[]>(json);
                 if (presets is { Length: > 0 })
                 {
@@ -259,6 +266,8 @@ public partial class MainWindow : Window
                     {
                         Presets.Add(preset);
                     }
+
+                    SetStatus($"已加载配置：{presetFilePath}");
                 }
             }
             catch
@@ -273,6 +282,7 @@ public partial class MainWindow : Window
             Presets.Add(new WindowSizePreset { Name = "文档阅读", Width = 1440, Height = 900 });
             Presets.Add(new WindowSizePreset { Name = "全高清", Width = 1920, Height = 1080 });
             SavePresets();
+            SetStatus($"未找到配置文件，已创建默认配置：{_currentPresetFilePath}");
         }
 
         SelectedPreset = Presets.FirstOrDefault();
@@ -280,14 +290,31 @@ public partial class MainWindow : Window
 
     private void SavePresets()
     {
-        var directory = Path.GetDirectoryName(_presetFilePath);
+        _currentPresetFilePath ??= GetPreferredPresetFilePath(createIfMissing: true);
+
+        var directory = Path.GetDirectoryName(_currentPresetFilePath);
         if (!string.IsNullOrWhiteSpace(directory))
         {
             Directory.CreateDirectory(directory);
         }
 
         var json = JsonSerializer.Serialize(Presets, new JsonSerializerOptions { WriteIndented = true });
-        File.WriteAllText(_presetFilePath, json);
+        File.WriteAllText(_currentPresetFilePath, json);
+    }
+
+    private string GetPreferredPresetFilePath(bool createIfMissing = false)
+    {
+        if (File.Exists(_appPresetFilePath))
+        {
+            return _appPresetFilePath;
+        }
+
+        if (File.Exists(_systemPresetFilePath))
+        {
+            return _systemPresetFilePath;
+        }
+
+        return createIfMissing ? _appPresetFilePath : _appPresetFilePath;
     }
 
     private void SetStatus(string message)

@@ -39,6 +39,8 @@
             this.btnToggleAlarm = new System.Windows.Forms.Button();
             this.lblAlarmStatus = new System.Windows.Forms.Label();
             this.label1 = new System.Windows.Forms.Label();
+            this.labelAlarmContent = new System.Windows.Forms.Label();
+            this.txtAlarmContent = new System.Windows.Forms.TextBox();
             this.notifyIcon1 = new System.Windows.Forms.NotifyIcon(this.components);
             this.trayMenu = new System.Windows.Forms.ContextMenuStrip(this.components);
             this.trayMenuOpen = new System.Windows.Forms.ToolStripMenuItem();
@@ -110,6 +112,8 @@
             // 
             // tabPage2
             // 
+            this.tabPage2.Controls.Add(this.txtAlarmContent);
+            this.tabPage2.Controls.Add(this.labelAlarmContent);
             this.tabPage2.Controls.Add(this.lblAlarmStatus);
             this.tabPage2.Controls.Add(this.btnToggleAlarm);
             this.tabPage2.Controls.Add(this.dtpAlarmTime);
@@ -159,6 +163,24 @@
             this.lblAlarmStatus.Size = new System.Drawing.Size(101, 12);
             this.lblAlarmStatus.TabIndex = 3;
             this.lblAlarmStatus.Text = "当前状态: 未开启";
+            // 
+            // labelAlarmContent
+            // 
+            this.labelAlarmContent.AutoSize = true;
+            this.labelAlarmContent.Location = new System.Drawing.Point(40, 120);
+            this.labelAlarmContent.Name = "labelAlarmContent";
+            this.labelAlarmContent.Size = new System.Drawing.Size(59, 12);
+            this.labelAlarmContent.TabIndex = 4;
+            this.labelAlarmContent.Text = "提醒内容:";
+            // 
+            // txtAlarmContent
+            // 
+            this.txtAlarmContent.Location = new System.Drawing.Point(130, 116);
+            this.txtAlarmContent.Multiline = true;
+            this.txtAlarmContent.Name = "txtAlarmContent";
+            this.txtAlarmContent.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
+            this.txtAlarmContent.Size = new System.Drawing.Size(320, 80);
+            this.txtAlarmContent.TabIndex = 5;
             // 
             // notifyIcon1
             // 
@@ -220,6 +242,8 @@
         private System.Windows.Forms.Button btnToggleAlarm;
         private System.Windows.Forms.Label lblAlarmStatus;
         private System.Windows.Forms.Label label1;
+        private System.Windows.Forms.Label labelAlarmContent;
+        private System.Windows.Forms.TextBox txtAlarmContent;
         private System.Windows.Forms.NotifyIcon notifyIcon1;
         private System.Windows.Forms.ContextMenuStrip trayMenu;
         private System.Windows.Forms.ToolStripMenuItem trayMenuOpen;
