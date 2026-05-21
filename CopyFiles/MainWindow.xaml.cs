@@ -1,6 +1,4 @@
-﻿using Microsoft.Win32;
-
-using Newtonsoft.Json;
+using Microsoft.Win32;
 
 using Serilog;
 using Serilog.Core;
@@ -10,19 +8,11 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Forms;
 using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
-
-using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 
 using Clipboard = System.Windows.Clipboard;
 using Path = System.IO.Path;
@@ -42,9 +32,6 @@ namespace CopyFiles
         public MainWindow()
         {
             InitializeComponent();
-            //init Serilog to write file log
-
-
         }
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
@@ -55,12 +42,15 @@ namespace CopyFiles
             {
                 try
                 {
-                    var history = Newtonsoft.Json.JsonConvert.DeserializeObject<History>(File.ReadAllText(_historyConfig));
-                    txtInput.Text = history.InputFolder;
-                    txtOutFolder.Text = history.OutputFolder;
-                    txtInputFileNames.Text = history.InputFileNames;
+                    var history = JsonSerializer.Deserialize<History>(File.ReadAllText(_historyConfig));
+                    if (history != null)
+                    {
+                        txtInput.Text = history.InputFolder;
+                        txtOutFolder.Text = history.OutputFolder;
+                        txtInputFileNames.Text = history.InputFileNames;
+                    }
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
                     File.Delete(_historyConfig);
                     SaveHistory();
@@ -74,7 +64,7 @@ namespace CopyFiles
 
         private void btnInput_Click(object sender, RoutedEventArgs e)
         {
-            FolderBrowserDialog dialog = new FolderBrowserDialog();
+            using var dialog = new System.Windows.Forms.FolderBrowserDialog();
             if (dialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
             {
                 txtInput.Text = dialog.SelectedPath;
@@ -85,7 +75,7 @@ namespace CopyFiles
 
         private void btnOutputSelect_Click(object sender, RoutedEventArgs e)
         {
-            FolderBrowserDialog dialog = new FolderBrowserDialog();
+            using var dialog = new System.Windows.Forms.FolderBrowserDialog();
             if (dialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
             {
                 txtOutFolder.Text = dialog.SelectedPath;
@@ -106,7 +96,7 @@ namespace CopyFiles
                 if ((File.GetAttributes(inputFolder) & FileAttributes.Directory) == FileAttributes.Directory)
                 {
                     var input = txtInputFileNames.Text ?? "";
-                    Dictionary<string, List<string>> dicFiles = new Dictionary<string, List<string>>();
+                    Dictionary<string, List<string>> dicFiles = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
                     List<string> fileList = new List<string>();
                     if (cbx_EnableSubDir.IsChecked == true)
                     {
@@ -114,7 +104,7 @@ namespace CopyFiles
                         foreach (var subDir in subDirs)
                         {
                             var subDirName = subDir.Substring(inputFolder.Length + 1);
-                            if (subDirName.ToLowerInvariant().Equals(".git"))
+                            if (subDirName.Equals(".git", StringComparison.OrdinalIgnoreCase))
                             {
                                 continue;
                             }
@@ -127,8 +117,8 @@ namespace CopyFiles
                         fileList = Directory.GetFiles(inputFolder, "*", SearchOption.TopDirectoryOnly).ToList();
                     }
                     fileList = fileList.Select(t => t.ToLowerInvariant()).ToList();
-                    fileList.GroupBy(g => Path.GetExtension(g)).ToList()
-                            .ForEach(g => dicFiles.Add(g.Key, g.ToList()));
+                    fileList.GroupBy(g => Path.GetExtension(g), StringComparer.OrdinalIgnoreCase).ToList()
+                            .ForEach(g => dicFiles[g.Key] = g.ToList());
 
                     var lines = input.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
                     foreach (var item in lines)
@@ -149,7 +139,6 @@ namespace CopyFiles
                                     if (fName.Replace(".*", "") == "*")//表示所有文件
                                     {
                                         wildcard = "*.*";
-                                        //deep copy fileList to matchedFiles
                                         matchedFiles = fileList.ToList();
                                     }
                                     else//只匹配文件名,不匹配扩展名
@@ -162,31 +151,25 @@ namespace CopyFiles
 
                                 else
                                 {
-                                    //TODO: 扩展名中包含通配符,暂时不支持,分为开头,中间,结尾三种情况
                                     var toMatchExt = ext;
                                     wildcard = ext;
                                     if (ext.EndsWith("*"))
                                     {
-                                        //matchedFiles = fileList.Where(t => Path.GetExtension(t).EndsWith(toMatchExt)).ToList();
-                                        dicFiles.Keys.Where(t => t.EndsWith(toMatchExt)).ToList()
+                                        dicFiles.Keys.Where(t => t.EndsWith(toMatchExt, StringComparison.OrdinalIgnoreCase)).ToList()
                                         .ForEach(d => matchedFiles.AddRange(dicFiles[d]));
                                     }
                                     else if (toMatchExt.StartsWith("*"))
                                     {
-                                        //matchedFiles = fileList.Where(t => Path.GetExtension(t).StartsWith(toMatchExt)).ToList();
-                                        dicFiles.Keys.Where(t => t.StartsWith(toMatchExt)).ToList()
+                                        dicFiles.Keys.Where(t => t.StartsWith(toMatchExt, StringComparison.OrdinalIgnoreCase)).ToList()
                                        .ForEach(d => matchedFiles.AddRange(dicFiles[d]));
                                     }
                                     else
                                     {
                                         var toMatchExts = toMatchExt.Split("*", options: StringSplitOptions.RemoveEmptyEntries);
-                                        //matchedFiles = fileList.Where(t => Path.GetExtension(t).Contains(toMatchExts[0]) && Path.GetExtension(t).Contains(toMatchExts[1])).ToList();
-
-                                        dicFiles.Keys.Where(t => t.Contains(toMatchExts[0]) && t.Contains(toMatchExts[1])).ToList()
+                                        dicFiles.Keys.Where(t => t.Contains(toMatchExts[0], StringComparison.OrdinalIgnoreCase) && t.Contains(toMatchExts[1], StringComparison.OrdinalIgnoreCase)).ToList()
                                       .ForEach(d => matchedFiles.AddRange(dicFiles[d]));
                                     }
                                 }
-                                //var matchedFiles = fileList.Where(t => t.Contains(ext.Replace("*", "")));
                                 foreach (var matchedFile in matchedFiles)
                                 {
                                     var fileName = Path.GetFileName(matchedFile);
@@ -199,7 +182,7 @@ namespace CopyFiles
                             else
                             {
                                 var extent = Path.GetExtension(fName).ToLowerInvariant();
-                                var tFileList = dicFiles[extent];
+                                var tFileList = dicFiles.TryGetValue(extent, out var list) ? list : new List<string>();
                                 var toMatchName = Path.GetFileNameWithoutExtension(fName);
                                 if (toMatchName.EndsWith("*"))
                                 {
@@ -216,7 +199,6 @@ namespace CopyFiles
                                     var toMatchNames = toMatchName.Split("*", options: StringSplitOptions.RemoveEmptyEntries);
                                     matchedFiles = tFileList.Where(t => Path.GetFileName(t).Contains(toMatchNames[0]) && Path.GetFileName(t).Contains(toMatchNames[1])).ToList();
                                 }
-                                //var matchedFiles = fileList.Where(t => t.Contains(ext.Replace("*", "")));
                                 foreach (var matchedFile in matchedFiles)
                                 {
                                     var fileName = Path.GetFileName(matchedFile);
@@ -302,21 +284,21 @@ namespace CopyFiles
         {
             if (Clipboard.ContainsText())
             {
-                e.Handled = true; // Prevent standard text input from occurring
+                e.Handled = true;
                 txtInput.Text = Clipboard.GetText();
-                // Trigger custom event to handle pasted content here.
             }
         }
 
 
         private void SaveHistory()
         {
-            File.WriteAllText(_historyConfig, Newtonsoft.Json.JsonConvert.SerializeObject(new History()
+            var json = JsonSerializer.Serialize(new History()
             {
                 InputFolder = txtInput.Text,
                 OutputFolder = txtOutFolder.Text,
                 InputFileNames = txtInputFileNames.Text
-            }));
+            }, new JsonSerializerOptions { WriteIndented = true });
+            File.WriteAllText(_historyConfig, json);
         }
 
         private void txtInputFileNames_TextChanged(object sender, TextChangedEventArgs e)

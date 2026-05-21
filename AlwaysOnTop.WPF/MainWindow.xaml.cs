@@ -105,11 +105,11 @@ public partial class MainWindow : Window
         const uint VK_3 = 0x33;
         uint modifiers = WindowServices.MOD_CONTROL | WindowServices.MOD_SHIFT;
 
-            if (!WindowServices.RegisterHotKey(handle, HOTKEY_ID, modifiers, VK_3))
-            {
-                System.Windows.MessageBox.Show("Failed to register hotkey Ctrl+Shift+3. It might be in use.");
-            }
+        if (!WindowServices.RegisterHotKey(handle, HOTKEY_ID, modifiers, VK_3))
+        {
+            System.Windows.MessageBox.Show("Failed to register hotkey Ctrl+Shift+3. It might be in use.");
         }
+    }
 
     private IntPtr HwndHook(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
     {

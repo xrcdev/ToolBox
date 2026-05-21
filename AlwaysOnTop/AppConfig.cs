@@ -6,7 +6,7 @@ namespace AlwaysOnTop
 {
     public class AppConfig
     {
-        public HotkeysConfig Hotkeys { get; set; }
+        public HotkeysConfig Hotkeys { get; set; } = new();
 
         public static AppConfig Load(string configPath = "config.json")
         {
@@ -44,13 +44,13 @@ namespace AlwaysOnTop
 
     public class HotkeysConfig
     {
-        public HotkeyConfig Pin { get; set; }
-        public HotkeyConfig Unpin { get; set; }
+        public HotkeyConfig Pin { get; set; } = new();
+        public HotkeyConfig Unpin { get; set; } = new();
     }
 
     public class HotkeyConfig
     {
-        public string Modifiers { get; set; }
-        public string Key { get; set; }
+        public string Modifiers { get; set; } = string.Empty;
+        public string Key { get; set; } = string.Empty;
     }
 }

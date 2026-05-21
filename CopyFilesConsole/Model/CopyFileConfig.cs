@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -8,8 +8,8 @@ namespace CopyFilesConsole.Model
 {
     internal class CopyFileConfig
     {
-        public string FromDir { get; set; }
-        public string ToDir { get; set; }
+        public string FromDir { get; set; } = string.Empty;
+        public string ToDir { get; set; } = string.Empty;
         public DateTime AfterTime { get; set; }
         public bool IsCopyPdb { get; set; }
     }

@@ -69,8 +69,8 @@ namespace AlwaysOnTop
         private int _unpinHotkeyId = 2;
         private Dictionary<int, Action> _hotkeyActions;
 
-        public event Action OnPinHotkey;
-        public event Action OnUnpinHotkey;
+        public event Action? OnPinHotkey;
+        public event Action? OnUnpinHotkey;
 
         public GlobalHotkey()
         {

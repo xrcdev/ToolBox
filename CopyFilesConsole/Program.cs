@@ -35,7 +35,7 @@ namespace CopyFilesConsole
             var fromDlls = Directory.GetFiles(_copyFileConfig.FromDir, "*.dll", SearchOption.AllDirectories);
             List<CopyFileInfo> fromDllInfos = GetInfosByFiles(fromDlls, false);
             var dts = fromDllInfos.Select(t => new { t.FileName, t.CreateTime });
-            Log.Information($"fromDlls count:{toDlls.Length}");
+            Log.Information($"fromDlls count:{fromDlls.Length}");
 
             Replace(toDllInfos, fromDllInfos);
 
@@ -63,8 +63,8 @@ namespace CopyFilesConsole
                 {
                     ReplaceFileInfo replaceFileInfo = new ReplaceFileInfo()
                     {
-                        newFile = fromDll,
-                        targetFile = toDll
+                        NewFile = fromDll,
+                        TargetFile = toDll
                     };
                     try
                     {
@@ -117,7 +117,7 @@ namespace CopyFilesConsole
                 info.FileFullName = file;
                 info.FileName = Path.GetFileName(file);
                 info.FileExt = Path.GetExtension(file);
-                info.FileDir = Path.GetDirectoryName(file);
+                info.FileDir = Path.GetDirectoryName(file) ?? string.Empty;
                 info.CreateTime = File.GetLastWriteTime(file);
                 info.IsPdbExists = File.Exists(Path.Combine(info.FileDir, Path.GetFileNameWithoutExtension(info.FileName) + ".pdb"));
                 info.RelateDir = info.FileDir.Replace(IsFromToDir ? _copyFileConfig.FromDir : _copyFileConfig.ToDir, "");

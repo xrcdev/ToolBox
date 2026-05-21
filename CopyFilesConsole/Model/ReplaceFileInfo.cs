@@ -1,9 +1,9 @@
-﻿namespace CopyFilesConsole.Model
+namespace CopyFilesConsole.Model
 {
     public class ReplaceFileInfo
     {
-        public CopyFileInfo newFile { get; set; }
-        public CopyFileInfo targetFile { get; set; }
+        public CopyFileInfo NewFile { get; set; } = new();
+        public CopyFileInfo TargetFile { get; set; } = new();
         public bool ReplaceSuccess { get; set; }
     }
 }

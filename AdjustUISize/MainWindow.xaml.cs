@@ -290,7 +290,7 @@ public partial class MainWindow : Window
 
     private void SavePresets()
     {
-        _currentPresetFilePath ??= GetPreferredPresetFilePath(createIfMissing: true);
+        _currentPresetFilePath ??= GetPreferredPresetFilePath();
 
         var directory = Path.GetDirectoryName(_currentPresetFilePath);
         if (!string.IsNullOrWhiteSpace(directory))
@@ -302,7 +302,7 @@ public partial class MainWindow : Window
         File.WriteAllText(_currentPresetFilePath, json);
     }
 
-    private string GetPreferredPresetFilePath(bool createIfMissing = false)
+    private string GetPreferredPresetFilePath()
     {
         if (File.Exists(_appPresetFilePath))
         {
@@ -314,7 +314,7 @@ public partial class MainWindow : Window
             return _systemPresetFilePath;
         }
 
-        return createIfMissing ? _appPresetFilePath : _appPresetFilePath;
+        return _appPresetFilePath;
     }
 
     private void SetStatus(string message)

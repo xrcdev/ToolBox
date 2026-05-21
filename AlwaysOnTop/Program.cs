@@ -50,8 +50,8 @@ namespace AlwaysOnTop
 
         // 存储已置顶的窗口
         private static readonly HashSet<IntPtr> _pinnedWindows = new HashSet<IntPtr>();
-        private static AppConfig _config;
-        private static GlobalHotkey _globalHotkey;
+        private static AppConfig _config = null!;
+        private static GlobalHotkey _globalHotkey = null!;
 
         static void Main(string[] args)
         {
