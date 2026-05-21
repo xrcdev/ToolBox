@@ -10,6 +10,7 @@
   <Project Path="CopyFiles/CopyFiles.csproj" />
   <Project Path="CopyFilesConsole/CopyFilesConsole.csproj" />
   <Project Path="GitHubCopilotSdkDemo/GitHubCopilotSdkDemo.csproj" />
+  <Project Path="MyTranslator/MyTranslator.csproj" Id="9dad1c2f-a31c-40fd-8988-90a285c0ed70" />
   <Project Path="PdfSplitter/PdfSplitter.csproj" />
   <Project Path="RemoveFileReadonlyAttribute/RemoveFileReadonlyAttribute.csproj" />
 </Solution>
