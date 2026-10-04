@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Runtime.InteropServices;
+using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Automation;
 using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
@@ -22,16 +24,32 @@ namespace MyTranslator
     {
         private const int HotKeyId = 9001;
         private const byte VkControl = 0x11;
+        private const byte VkMenu = 0x12;
         private const byte VkC = 0x43;
+        private const byte VkShift = 0x10;
+        private const byte VkLWin = 0x5B;
+        private const byte VkRWin = 0x5C;
         private const uint KeyEventKeyUp = 0x0002;
         private const uint ModAlt = 0x0001;
         private const uint ModControl = 0x0002;
         private const uint ModShift = 0x0004;
         private const uint ModWin = 0x0008;
 
+        // UIA 向上查找支持 TextPattern 祖先节点的最大层数
+        private const int MaxUiAutomationAncestorDepth = 5;
+        private const int UiAutomationTimeoutMs = 800;
+        // Chromium 系浏览器首次 UIA 查询只负责触发其无障碍树激活，需重试一次
+        private const int UiAutomationMaxAttempts = 2;
+        private const int UiAutomationRetryDelayMs = 300;
+        private const int ModifierReleaseTimeoutMs = 600;
+        private const int ClipboardCopyTimeoutMs = 1200;
+        // 腾讯云 TextTranslate 单次请求上限约 2000 字符，留出余量
+        private const int MaxSourceTextLength = 1800;
+
         private uint _currentModifiers;
         private uint _currentVirtualKey;
         private bool _isTranslating;
+        private string _lastCaptureMethod = string.Empty;
         private WinForms.NotifyIcon? _notifyIcon;
         private WinForms.ContextMenuStrip? _trayMenu;
         private Drawing.Icon? _appIcon;
@@ -241,28 +259,40 @@ namespace MyTranslator
             _isTranslating = true;
             try
             {
+                // 取词必须在本窗口置前之前完成，否则焦点被抢走后
+                // UIA 读到的和模拟 Ctrl+C 发往的都会是翻译器自己
                 SetStatus("正在读取选中文本...");
                 var selectedText = await CaptureSelectedTextAsync();
                 if (string.IsNullOrWhiteSpace(selectedText))
                 {
-                    SetStatus("未读取到选中文本，请先在其他程序中选中内容。");
-                    System.Windows.MessageBox.Show(this, "未读取到选中文本，请先在其他程序中选中内容后再按快捷键。", "提示");
+                    SetStatus("未读取到选中文本：UI 自动化与模拟复制均未成功。");
+                    _notifyIcon?.ShowBalloonTip(1500, "MyTranslator", "未读取到选中文本，请先选中内容。", WinForms.ToolTipIcon.Warning);
                     return;
                 }
 
+                selectedText = selectedText.Trim();
+                if (selectedText.Length > MaxSourceTextLength)
+                {
+                    selectedText = selectedText[..MaxSourceTextLength];
+                    SetStatus($"选中文本过长，已截断为 {MaxSourceTextLength} 字符，正在调用翻译接口...");
+                }
+                else
+                {
+                    SetStatus("正在调用翻译接口...");
+                }
+
                 SelectedTextTextBox.Text = selectedText;
-                SetStatus("正在调用翻译接口...");
 
                 var translatedText = await Task.Run(() => TranslateText(selectedText));
                 TranslatedTextTextBox.Text = translatedText;
-                SetStatus("翻译完成。");
+                SetStatus($"翻译完成。（取词方式：{_lastCaptureMethod}）");
 
-                System.Windows.MessageBox.Show(this, translatedText, "翻译结果");
+                BringWindowToForeground();
             }
             catch (Exception ex)
             {
-                SetStatus("翻译失败。");
-                System.Windows.MessageBox.Show(this, ex.Message, "翻译失败");
+                SetStatus($"翻译失败：{ex.Message}");
+                _notifyIcon?.ShowBalloonTip(2000, "MyTranslator", $"翻译失败：{ex.Message}", WinForms.ToolTipIcon.Error);
             }
             finally
             {
@@ -272,47 +302,187 @@ namespace MyTranslator
 
         private async Task<string?> CaptureSelectedTextAsync()
         {
-
-
-            string? selectedText = null;
-
-            if (System.Windows.Clipboard.ContainsText())
+            for (var attempt = 1; attempt <= UiAutomationMaxAttempts; attempt++)
             {
-                selectedText = System.Windows.Clipboard.GetText();
-                return selectedText;
+                var uiAutomationText = await GetSelectedTextByUiAutomationAsync();
+                if (!string.IsNullOrWhiteSpace(uiAutomationText))
+                {
+                    _lastCaptureMethod = "UI 自动化";
+                    return uiAutomationText;
+                }
+
+                if (attempt < UiAutomationMaxAttempts)
+                {
+                    await Task.Delay(UiAutomationRetryDelayMs);
+                }
             }
-            else
+
+            var clipboardText = await CopySelectionByClipboardAsync();
+            if (!string.IsNullOrWhiteSpace(clipboardText))
             {
-                object? clipboardBackup = null;
-                var hasClipboardBackup = false;
+                _lastCaptureMethod = "模拟复制";
+            }
+
+            return clipboardText;
+        }
+
+        private static async Task<string?> GetSelectedTextByUiAutomationAsync()
+        {
+            try
+            {
+                // UIA 查询可能被目标程序阻塞，放到后台线程并限时，超时则改走剪贴板
+                var query = Task.Run(TryGetSelectedTextByUiAutomation);
+                var winner = await Task.WhenAny(query, Task.Delay(UiAutomationTimeoutMs));
+                return winner == query ? query.Result : null;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        private static string? TryGetSelectedTextByUiAutomation()
+        {
+            var node = AutomationElement.FocusedElement;
+            for (var depth = 0; node is not null && depth <= MaxUiAutomationAncestorDepth; depth++)
+            {
                 try
                 {
-                    clipboardBackup = System.Windows.Clipboard.GetDataObject();
-                    hasClipboardBackup = clipboardBackup is not null;
-                    if (hasClipboardBackup && clipboardBackup is not null)
+                    if (node.TryGetCurrentPattern(TextPattern.Pattern, out var pattern) && pattern is TextPattern textPattern)
                     {
-                        System.Windows.Clipboard.SetDataObject(clipboardBackup, true);
-                    }
-                    else
-                    {
-                        System.Windows.Clipboard.Clear();
+                        var builder = new StringBuilder();
+                        foreach (var range in textPattern.GetSelection())
+                        {
+                            var text = range.GetText(-1);
+                            if (!string.IsNullOrWhiteSpace(text))
+                            {
+                                if (builder.Length > 0)
+                                {
+                                    builder.AppendLine();
+                                }
+                                builder.Append(text.Trim());
+                            }
+                        }
+
+                        if (builder.Length > 0)
+                        {
+                            return builder.ToString();
+                        }
                     }
                 }
                 catch
                 {
+                    // 个别程序在查询模式或选区时会抛 COM 异常，继续向父节点尝试
+                }
+
+                try
+                {
+                    node = TreeWalker.ControlViewWalker.GetParent(node);
+                }
+                catch
+                {
+                    break;
                 }
             }
 
-            //try
-            //{
-            //    System.Windows.Clipboard.Clear();
-            //}
-            //catch
-            //{
-            //}
-            //SimulateCopyShortcut();
-            //await Task.Delay(200);
-            return selectedText;
+            return null;
+        }
+
+        private static async Task<string?> CopySelectionByClipboardAsync()
+        {
+            // WM_HOTKEY 到达时用户可能仍按着 Ctrl/Shift 等修饰键，
+            // 此时模拟 Ctrl+C 会变成 Ctrl+Shift+C，先等修饰键物理松开
+            await WaitForModifierKeysReleasedAsync();
+
+            System.Windows.IDataObject? backup = null;
+            try
+            {
+                backup = System.Windows.Clipboard.GetDataObject();
+            }
+            catch
+            {
+            }
+
+            var clipboardChanged = false;
+            try
+            {
+                var sequenceBeforeCopy = WindowServices.GetClipboardSequenceNumber();
+                SimulateCopyShortcut();
+
+                var deadline = Environment.TickCount64 + ClipboardCopyTimeoutMs;
+                while (Environment.TickCount64 < deadline)
+                {
+                    await Task.Delay(25);
+                    if (WindowServices.GetClipboardSequenceNumber() == sequenceBeforeCopy)
+                    {
+                        continue;
+                    }
+
+                    clipboardChanged = true;
+                    if (System.Windows.Clipboard.ContainsText())
+                    {
+                        var text = System.Windows.Clipboard.GetText();
+                        if (!string.IsNullOrWhiteSpace(text))
+                        {
+                            return text;
+                        }
+                    }
+
+                    // 目标程序改写了剪贴板但没有文本（如复制了文件），视为取词失败
+                    break;
+                }
+            }
+            catch
+            {
+            }
+            finally
+            {
+                if (clipboardChanged)
+                {
+                    RestoreClipboard(backup);
+                }
+            }
+
+            return null;
+        }
+
+        private static async Task WaitForModifierKeysReleasedAsync()
+        {
+            var deadline = Environment.TickCount64 + ModifierReleaseTimeoutMs;
+            while (Environment.TickCount64 < deadline)
+            {
+                if (!IsKeyDown(VkControl) && !IsKeyDown(VkShift) && !IsKeyDown(VkMenu)
+                    && !IsKeyDown(VkLWin) && !IsKeyDown(VkRWin))
+                {
+                    return;
+                }
+
+                await Task.Delay(15);
+            }
+        }
+
+        private static bool IsKeyDown(byte virtualKey)
+        {
+            return (WindowServices.GetAsyncKeyState(virtualKey) & 0x8000) != 0;
+        }
+
+        private static void RestoreClipboard(System.Windows.IDataObject? backup)
+        {
+            try
+            {
+                if (backup is not null)
+                {
+                    System.Windows.Clipboard.SetDataObject(backup, true);
+                }
+                else
+                {
+                    System.Windows.Clipboard.Clear();
+                }
+            }
+            catch
+            {
+                // 恢复失败只能放弃，不能让剪贴板异常中断翻译流程
+            }
         }
 
         private static void SimulateCopyShortcut()
@@ -329,7 +499,7 @@ namespace MyTranslator
             var secretKey = Environment.GetEnvironmentVariable("TENCENTCLOUD_SECRET_KEY");
             if (string.IsNullOrWhiteSpace(secretId) || string.IsNullOrWhiteSpace(secretKey))
             {
-                throw new InvalidOperationException("TENCENTCLOUD_SECRET_ID / TENCENTCLOUD_SECRET_KEY not set.");
+                throw new InvalidOperationException("未找到腾讯云密钥环境变量，请先设置 TENCENTCLOUD_SECRET_ID 和 TENCENTCLOUD_SECRET_KEY。");
             }
 
             var cred = new Credential
@@ -375,12 +545,53 @@ namespace MyTranslator
             }
         }
 
-        private void RestoreFromTray()
+        private void BringWindowToForeground()
         {
+            // 从托盘隐藏或最小化状态恢复
             Show();
             WindowState = WindowState.Normal;
+
+            var helper = new WindowInteropHelper(this);
+            var handle = helper.Handle;
+
+            if (WindowServices.SetForegroundWindow(handle) && WindowServices.GetForegroundWindow() == handle)
+            {
+                Activate();
+                Focus();
+                return;
+            }
+
+            // 翻译耗时期间用户在别的程序里输入过，Windows 前台锁会拒绝普通进程置前；
+            // 把本线程的输入队列临时挂到当前前台线程上即可获得置前资格
+            var foregroundHandle = WindowServices.GetForegroundWindow();
+            var foregroundThreadId = foregroundHandle == IntPtr.Zero
+                ? 0u
+                : WindowServices.GetWindowThreadProcessId(foregroundHandle, out _);
+            var currentThreadId = WindowServices.GetCurrentThreadId();
+            var attached = foregroundThreadId != 0
+                && foregroundThreadId != currentThreadId
+                && WindowServices.AttachThreadInput(currentThreadId, foregroundThreadId, true);
+
+            try
+            {
+                WindowServices.BringWindowToTop(handle);
+                WindowServices.SetForegroundWindow(handle);
+            }
+            finally
+            {
+                if (attached)
+                {
+                    WindowServices.AttachThreadInput(currentThreadId, foregroundThreadId, false);
+                }
+            }
+
             Activate();
             Focus();
+        }
+
+        private void RestoreFromTray()
+        {
+            BringWindowToForeground();
             SetStatus("已从托盘恢复窗口。");
         }
 
@@ -473,5 +684,29 @@ namespace MyTranslator
 
         [DllImport("user32.dll")]
         public static extern bool UnregisterHotKey(IntPtr hWnd, int id);
+
+        [DllImport("user32.dll")]
+        public static extern bool SetForegroundWindow(IntPtr hWnd);
+
+        [DllImport("user32.dll")]
+        public static extern IntPtr GetForegroundWindow();
+
+        [DllImport("user32.dll")]
+        public static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
+
+        [DllImport("user32.dll")]
+        public static extern bool AttachThreadInput(uint idAttach, uint idAttachTo, bool fAttach);
+
+        [DllImport("user32.dll")]
+        public static extern bool BringWindowToTop(IntPtr hWnd);
+
+        [DllImport("kernel32.dll")]
+        public static extern uint GetCurrentThreadId();
+
+        [DllImport("user32.dll")]
+        public static extern uint GetClipboardSequenceNumber();
+
+        [DllImport("user32.dll")]
+        public static extern short GetAsyncKeyState(int vKey);
     }
 }

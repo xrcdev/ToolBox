@@ -18,7 +18,7 @@
             <StackPanel>
                 <TextBlock FontSize="20" FontWeight="SemiBold" Text="快捷翻译机" />
                 <TextBlock Margin="0,8,0,0" TextWrapping="Wrap">
-                    先在其他程序中选中文本，再按全局快捷键即可自动复制、翻译并弹窗显示结果。
+                    先在其他程序中选中文本，再按全局快捷键：优先通过系统自动化接口读取选区；失败时自动模拟复制（原剪贴板内容会还原），完成后弹窗显示翻译结果。
                     默认快捷键为 <Run FontWeight="Bold" Text="Ctrl + Shift + 1" />。
                 </TextBlock>
             </StackPanel>
