@@ -57,4 +57,7 @@ internal sealed class ToolNavEntry
     public string Title { get; }
 
     public UserControl Page { get; }
+
+    /// <summary>供 UI 自动化/无障碍读取条目名称。</summary>
+    public override string ToString() => Title;
 }

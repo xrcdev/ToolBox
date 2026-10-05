@@ -57,8 +57,13 @@
                 <ListBox x:Name="NavList"
                          Background="Transparent"
                          BorderThickness="0"
+                         AllowDrop="True"
                          ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                          ItemContainerStyle="{StaticResource NavItemContainerStyle}"
+                         PreviewMouseLeftButtonDown="NavList_PreviewMouseLeftButtonDown"
+                         PreviewMouseMove="NavList_PreviewMouseMove"
+                         DragOver="NavList_DragOver"
+                         Drop="NavList_Drop"
                          SelectionChanged="NavList_SelectionChanged">
                     <ListBox.ItemTemplate>
                         <DataTemplate>

@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -16,6 +18,11 @@ using ToolBox.Tools.RemoveReadonly;
 using ToolBox.Tools.Settings;
 using Drawing = System.Drawing;
 using WinForms = System.Windows.Forms;
+using DataObject = System.Windows.DataObject;
+using DragDropEffects = System.Windows.DragDropEffects;
+using DragEventArgs = System.Windows.DragEventArgs;
+using MouseEventArgs = System.Windows.Input.MouseEventArgs;
+using Point = System.Windows.Point;
 
 namespace ToolBox;
 
@@ -27,7 +34,7 @@ namespace ToolBox;
 public partial class MainWindow : Window, IShellHost
 {
     private readonly ShellSettings _settings;
-    private readonly List<ToolNavEntry> _navEntries = new();
+    private readonly ObservableCollection<ToolNavEntry> _navEntries = new();
     private readonly List<IToolPage> _pages = new();
     private readonly Dictionary<int, bool> _hotkeyState = new();
     private readonly MyTranslatorPage _translatorPage;
@@ -35,6 +42,10 @@ public partial class MainWindow : Window, IShellHost
     private readonly AlwaysOnTopPage _alwaysOnTopPage;
     private HwndSource? _hwndSource;
     private IntPtr _handle;
+
+    // 导航选项卡拖拽排序的按下起点与被拖动条目
+    private Point _navDragStartPoint;
+    private ToolNavEntry? _navDragEntry;
 
     private WinForms.NotifyIcon? _notifyIcon;
     private WinForms.ContextMenuStrip? _trayMenu;
@@ -72,6 +83,7 @@ public partial class MainWindow : Window, IShellHost
         _navEntries.Add(new ToolNavEntry("🔓", removeReadonlyPage.Title, removeReadonlyPage));
         _navEntries.Add(new ToolNavEntry("⚙", settingsPage.Title, settingsPage));
 
+        ApplySavedPageOrder();
         NavList.ItemsSource = _navEntries;
         NavList.SelectedIndex = 0;
     }
@@ -147,6 +159,146 @@ public partial class MainWindow : Window, IShellHost
         }
 
         return IntPtr.Zero;
+    }
+
+    #endregion
+
+    #region 导航拖拽排序
+
+    private void NavList_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        _navDragEntry = null;
+        if (NavList.ContainerFromElement(e.OriginalSource as DependencyObject) is ListBoxItem container
+            && container.Content is ToolNavEntry entry)
+        {
+            _navDragEntry = entry;
+            _navDragStartPoint = e.GetPosition(NavList);
+        }
+    }
+
+    private void NavList_PreviewMouseMove(object sender, MouseEventArgs e)
+    {
+        if (e.LeftButton != MouseButtonState.Pressed || _navDragEntry is null)
+        {
+            return;
+        }
+
+        var pos = e.GetPosition(NavList);
+        if (Math.Abs(pos.X - _navDragStartPoint.X) < SystemParameters.MinimumHorizontalDragDistance
+            && Math.Abs(pos.Y - _navDragStartPoint.Y) < SystemParameters.MinimumVerticalDragDistance)
+        {
+            return;
+        }
+
+        var entry = _navDragEntry;
+        _navDragEntry = null;
+        DragDrop.DoDragDrop(NavList, new DataObject(entry), DragDropEffects.Move);
+    }
+
+    private void NavList_DragOver(object sender, DragEventArgs e)
+    {
+        e.Effects = e.Data.GetDataPresent(typeof(ToolNavEntry)) ? DragDropEffects.Move : DragDropEffects.None;
+        e.Handled = true;
+    }
+
+    private void NavList_Drop(object sender, DragEventArgs e)
+    {
+        if (e.Data.GetData(typeof(ToolNavEntry)) is ToolNavEntry entry)
+        {
+            MoveNavEntry(entry, GetNavInsertIndex(e.GetPosition(NavList)));
+        }
+    }
+
+    /// <summary>根据鼠标纵向位置计算插入位置：目标项上半部分插到其前，下半部分插到其后。</summary>
+    private int GetNavInsertIndex(Point pos)
+    {
+        for (var i = 0; i < NavList.Items.Count; i++)
+        {
+            if (NavList.ItemContainerGenerator.ContainerFromIndex(i) is not ListBoxItem container)
+            {
+                continue;
+            }
+
+            var topLeft = container.TranslatePoint(new Point(0, 0), NavList);
+            if (pos.Y < topLeft.Y + container.ActualHeight / 2)
+            {
+                return i;
+            }
+        }
+
+        // 拖到列表末尾空白处 → 插到最后
+        return NavList.Items.Count;
+    }
+
+    private void MoveNavEntry(ToolNavEntry entry, int insertIndex)
+    {
+        var oldIndex = _navEntries.IndexOf(entry);
+        if (oldIndex < 0)
+        {
+            return;
+        }
+
+        // 先移除后插入时，目标位置在其后方的项索引整体前移一位
+        if (oldIndex < insertIndex)
+        {
+            insertIndex--;
+        }
+
+        if (insertIndex == oldIndex)
+        {
+            return;
+        }
+
+        _navEntries.RemoveAt(oldIndex);
+        insertIndex = Math.Max(0, Math.Min(insertIndex, _navEntries.Count));
+        _navEntries.Insert(insertIndex, entry);
+        NavList.SelectedItem = entry;
+
+        PersistPageOrder();
+    }
+
+    /// <summary>启动时按设置中保存的顺序重排导航；未记录的新页面按默认顺序排在最后。</summary>
+    private void ApplySavedPageOrder()
+    {
+        if (_settings.PageOrder.Count == 0)
+        {
+            return;
+        }
+
+        var ordered = new List<ToolNavEntry>();
+        foreach (var title in _settings.PageOrder)
+        {
+            var entry = _navEntries.FirstOrDefault(t => t.Title == title);
+            if (entry is not null && !ordered.Contains(entry))
+            {
+                ordered.Add(entry);
+            }
+        }
+
+        foreach (var entry in _navEntries)
+        {
+            if (!ordered.Contains(entry))
+            {
+                ordered.Add(entry);
+            }
+        }
+
+        if (ordered.SequenceEqual(_navEntries))
+        {
+            return;
+        }
+
+        _navEntries.Clear();
+        foreach (var entry in ordered)
+        {
+            _navEntries.Add(entry);
+        }
+    }
+
+    private void PersistPageOrder()
+    {
+        _settings.PageOrder = _navEntries.Select(t => t.Title).ToList();
+        ShellSettingsStore.Save(_settings);
     }
 
     #endregion

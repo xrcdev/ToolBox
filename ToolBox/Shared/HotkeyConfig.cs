@@ -120,12 +120,15 @@ internal sealed class HotkeyConfig
     }
 }
 
-/// <summary>外壳持久化设置：各功能的全局热键。</summary>
+/// <summary>外壳持久化设置：各功能的全局热键与导航顺序。</summary>
 internal sealed class ShellSettings
 {
     public HotkeyConfig Translator { get; set; } = new() { Ctrl = true, Shift = true, Key = "1" };
     public HotkeyConfig Resize { get; set; } = new() { Ctrl = true, Shift = true, Key = "2" };
     public HotkeyConfig TopMost { get; set; } = new() { Ctrl = true, Shift = true, Key = "3" };
+
+    /// <summary>左侧导航选项卡的显示顺序（按页面标题，未列出的新页面排在最后）。</summary>
+    public List<string> PageOrder { get; set; } = new();
 
     public HotkeyConfig? ForId(int hotkeyId) => hotkeyId switch
     {
