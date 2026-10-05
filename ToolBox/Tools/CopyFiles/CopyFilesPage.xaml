@@ -15,14 +15,14 @@
                     <Setter Property ="HorizontalAlignment" Value="Center"></Setter>
                     <Setter Property ="VerticalAlignment" Value="Center"></Setter>
                 </Style>
-                <Style TargetType="TextBox">
+                <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
                     <Setter Property="MinWidth" Value="540" ></Setter>
                     <Setter Property="MaxWidth" Value="620" ></Setter>
                     <Setter Property="Height" Value="30"></Setter>
                     <Setter Property ="HorizontalAlignment" Value="Center"></Setter>
                     <Setter Property ="VerticalAlignment" Value="Center"></Setter>
                 </Style>
-                <Style TargetType="Button">
+                <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
                     <Setter Property="MinWidth" Value="100"></Setter>
                     <Setter Property="Height" Value="30"></Setter>
                     <Setter Property ="HorizontalAlignment" Value="Center"></Setter>
@@ -73,8 +73,8 @@
         </StackPanel>
 
         <GroupBox Header="输出" DockPanel.Dock="Bottom"  Width="Auto" >
-            <ScrollViewer  VerticalScrollBarVisibility="Auto">
-                <TextBox   AcceptsReturn="True" AcceptsTab="True"   x:Name="txtOutput"  ></TextBox>
+            <ScrollViewer  VerticalScrollBarVisibility="Auto" Margin="10">
+                <TextBox   AcceptsReturn="True" AcceptsTab="True"   x:Name="txtOutput" BorderThickness="0" Background="Transparent" Padding="2" ></TextBox>
             </ScrollViewer>
         </GroupBox>
     </DockPanel>

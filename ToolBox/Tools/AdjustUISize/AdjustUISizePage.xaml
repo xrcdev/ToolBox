@@ -13,8 +13,8 @@
         </Grid.RowDefinitions>
 
         <Border Padding="12"
-                Background="#FFF7F7F7"
-                BorderBrush="#FFD8D8D8"
+                Background="{StaticResource CardBackgroundBrush}"
+                BorderBrush="{StaticResource BorderBrush}"
                 BorderThickness="1"
                 CornerRadius="8">
             <StackPanel>
@@ -95,8 +95,8 @@
                             Grid.ColumnSpan="2"
                             Margin="0,16,0,0"
                             Padding="12"
-                            Background="#FFF7F7F7"
-                            BorderBrush="#FFD8D8D8"
+                            Background="{StaticResource CardBackgroundBrush}"
+                            BorderBrush="{StaticResource BorderBrush}"
                             BorderThickness="1"
                             CornerRadius="6">
                         <StackPanel>
