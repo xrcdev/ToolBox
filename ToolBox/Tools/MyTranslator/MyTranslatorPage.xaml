@@ -1,0 +1,67 @@
+<UserControl x:Class="ToolBox.Tools.MyTranslator.MyTranslatorPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d"
+             d:DesignHeight="520" d:DesignWidth="860">
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <Border Padding="12" Background="#FFF7F7F7" BorderBrush="#FFD8D8D8" BorderThickness="1" CornerRadius="8">
+            <StackPanel>
+                <TextBlock FontSize="20" FontWeight="SemiBold" Text="快捷翻译机" />
+                <TextBlock Margin="0,8,0,0" TextWrapping="Wrap">
+                    在其他程序中选中文本后按全局快捷键（可在 <Run FontWeight="Bold" Text="系统设置" /> 页自定义）：
+                    优先通过系统自动化接口读取选区；失败时自动模拟复制（原剪贴板内容会还原），完成后自动切换到本页并显示翻译结果。
+                    也可以直接在下方输入待翻译内容，点击 <Run FontWeight="Bold" Text="翻译" /> 按钮。
+                </TextBlock>
+            </StackPanel>
+        </Border>
+
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="16" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <GroupBox Header="待翻译文本（可手动输入）">
+                <DockPanel Margin="12">
+                    <Button x:Name="TranslateButton"
+                            DockPanel.Dock="Bottom"
+                            Width="110"
+                            Height="30"
+                            HorizontalAlignment="Right"
+                            Margin="0,8,0,0"
+                            Click="TranslateButton_Click"
+                            Content="翻译" />
+                    <TextBox x:Name="SelectedTextTextBox"
+                             AcceptsReturn="True"
+                             TextWrapping="Wrap"
+                             VerticalScrollBarVisibility="Auto" />
+                </DockPanel>
+            </GroupBox>
+
+            <GroupBox Grid.Column="2" Header="翻译结果">
+                <Grid Margin="12">
+                    <TextBox x:Name="TranslatedTextTextBox"
+                             AcceptsReturn="True"
+                             IsReadOnly="True"
+                             TextWrapping="Wrap"
+                             VerticalScrollBarVisibility="Auto" />
+                </Grid>
+            </GroupBox>
+        </Grid>
+
+        <StatusBar Grid.Row="2">
+            <StatusBarItem>
+                <TextBlock x:Name="StatusTextBlock" Text="就绪" />
+            </StatusBarItem>
+        </StatusBar>
+    </Grid>
+</UserControl>

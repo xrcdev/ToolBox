@@ -1,0 +1,307 @@
+using Serilog;
+using Serilog.Core;
+
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Text.Json;
+using System.Windows.Controls;
+using System.Windows.Input;
+
+using Clipboard = System.Windows.Clipboard;
+using Path = System.IO.Path;
+using UserControl = System.Windows.Controls.UserControl;
+
+namespace ToolBox.Tools.CopyFiles
+{
+    /// <summary>
+    /// 移植自 CopyFiles.MainWindow：按文件名/通配符从源文件夹批量拷贝文件到目标文件夹。
+    /// history.json 与 Serilog 日志仍按程序集所在目录解析。
+    /// </summary>
+    public partial class CopyFilesPage : UserControl, IToolPage
+    {
+        string _historyConfig = "history.json";
+        Logger _logger = new LoggerConfiguration()
+            .WriteTo.File("log.txt", rollingInterval: RollingInterval.Day)
+            .CreateLogger();
+
+        public CopyFilesPage()
+        {
+            InitializeComponent();
+        }
+
+        public string Title => "文件复制";
+
+        private void Page_Loaded(object sender, System.Windows.RoutedEventArgs e)
+        {
+            var path = System.Reflection.Assembly.GetExecutingAssembly().Location;
+            _historyConfig = Path.Combine(Path.GetDirectoryName(path), "history.json");
+            if (File.Exists(_historyConfig))
+            {
+                try
+                {
+                    var history = JsonSerializer.Deserialize<History>(File.ReadAllText(_historyConfig));
+                    if (history != null)
+                    {
+                        txtInput.Text = history.InputFolder;
+                        txtOutFolder.Text = history.OutputFolder;
+                        txtInputFileNames.Text = history.InputFileNames;
+                    }
+                }
+                catch (Exception)
+                {
+                    File.Delete(_historyConfig);
+                    SaveHistory();
+                }
+            }
+            else
+            {
+                SaveHistory();
+            }
+        }
+
+        private void btnInput_Click(object sender, System.Windows.RoutedEventArgs e)
+        {
+            using var dialog = new System.Windows.Forms.FolderBrowserDialog();
+            if (dialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+            {
+                txtInput.Text = dialog.SelectedPath;
+                txtOutFolder.Text = dialog.SelectedPath + "_Copy";
+                SaveHistory();
+            }
+        }
+
+        private void btnOutputSelect_Click(object sender, System.Windows.RoutedEventArgs e)
+        {
+            using var dialog = new System.Windows.Forms.FolderBrowserDialog();
+            if (dialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+            {
+                txtOutFolder.Text = dialog.SelectedPath;
+                SaveHistory();
+            }
+        }
+
+        private void btnCopy_Click(object sender, System.Windows.RoutedEventArgs e)
+        {
+            try
+            {
+                var inputFolder = (txtInput.Text ?? "").Trim();
+                var outputFolder = (txtOutFolder.Text ?? "").Trim();
+                if (!Directory.Exists(outputFolder))
+                    Directory.CreateDirectory(outputFolder);
+
+                //源文件夹填写的是一个文件夹,则拷贝输入框中输入的文件名称列表
+                if ((File.GetAttributes(inputFolder) & FileAttributes.Directory) == FileAttributes.Directory)
+                {
+                    var input = txtInputFileNames.Text ?? "";
+                    Dictionary<string, List<string>> dicFiles = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
+                    List<string> fileList = new List<string>();
+                    if (cbx_EnableSubDir.IsChecked == true)
+                    {
+                        var subDirs = Directory.GetDirectories(inputFolder, "*", SearchOption.AllDirectories);
+                        foreach (var subDir in subDirs)
+                        {
+                            var subDirName = subDir.Substring(inputFolder.Length + 1);
+                            if (subDirName.Equals(".git", StringComparison.OrdinalIgnoreCase))
+                            {
+                                continue;
+                            }
+                            var subDirFiles = Directory.GetFiles(subDir);
+                            fileList.AddRange(subDirFiles);
+                        }
+                    }
+                    else
+                    {
+                        fileList = Directory.GetFiles(inputFolder, "*", SearchOption.TopDirectoryOnly).ToList();
+                    }
+                    fileList = fileList.Select(t => t.ToLowerInvariant()).ToList();
+                    fileList.GroupBy(g => Path.GetExtension(g), StringComparer.OrdinalIgnoreCase).ToList()
+                            .ForEach(g => dicFiles[g.Key] = g.ToList());
+
+                    var lines = input.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
+                    foreach (var item in lines)
+                    {
+                        var fName = item.Trim().ToLowerInvariant();
+                        bool isWildcard = false;
+                        if (cbx_EnableWildcard.IsChecked.Value && fName.Contains("*"))
+                        {
+                            isWildcard = true;
+                            //判断通配符是否在文件的扩展名中
+                            var ext = Path.GetExtension(fName);
+                            var matchedFiles = new List<string>();
+                            var wildcard = "";
+                            if (ext.Contains("*"))
+                            {
+                                if (ext == ".*")
+                                {
+                                    if (fName.Replace(".*", "") == "*")//表示所有文件
+                                    {
+                                        wildcard = "*.*";
+                                        matchedFiles = fileList.ToList();
+                                    }
+                                    else//只匹配文件名,不匹配扩展名
+                                    {
+                                        var toMatchName = Path.GetFileNameWithoutExtension(fName);
+                                        wildcard = toMatchName + ".*";
+                                        matchedFiles = fileList.Where(t => Path.GetFileNameWithoutExtension(t).Contains(toMatchName)).ToList();
+                                    }
+                                }
+
+                                else
+                                {
+                                    var toMatchExt = ext;
+                                    wildcard = ext;
+                                    if (ext.EndsWith("*"))
+                                    {
+                                        dicFiles.Keys.Where(t => t.EndsWith(toMatchExt, StringComparison.OrdinalIgnoreCase)).ToList()
+                                            .ForEach(d => matchedFiles.AddRange(dicFiles[d]));
+                                    }
+                                    else if (toMatchExt.StartsWith("*"))
+                                    {
+                                        dicFiles.Keys.Where(t => t.StartsWith(toMatchExt, StringComparison.OrdinalIgnoreCase)).ToList()
+                                       .ForEach(d => matchedFiles.AddRange(dicFiles[d]));
+                                    }
+                                    else
+                                    {
+                                        var toMatchExts = toMatchExt.Split("*", options: StringSplitOptions.RemoveEmptyEntries);
+                                        dicFiles.Keys.Where(t => t.Contains(toMatchExts[0], StringComparison.OrdinalIgnoreCase) && t.Contains(toMatchExts[1], StringComparison.OrdinalIgnoreCase)).ToList()
+                                      .ForEach(d => matchedFiles.AddRange(dicFiles[d]));
+                                    }
+                                }
+                                foreach (var matchedFile in matchedFiles)
+                                {
+                                    var fileName = Path.GetFileName(matchedFile);
+                                    var outPath = Path.Combine(outputFolder, fileName);
+                                    File.Copy(matchedFile, outPath, true);
+                                    txtOutput.Text += $"{Path.GetFileName(matchedFile)} => {Path.GetFileName(outPath)}  ✔ 通过扩展名通配符{ext}" + Environment.NewLine;
+                                    _logger.Information($"{matchedFile} => {outPath}  ✔ 通过扩展名通配符{ext}");
+                                }
+                            }
+                            else
+                            {
+                                var extent = Path.GetExtension(fName).ToLowerInvariant();
+                                var tFileList = dicFiles.TryGetValue(extent, out var list) ? list : new List<string>();
+                                var toMatchName = Path.GetFileNameWithoutExtension(fName);
+                                if (toMatchName.EndsWith("*"))
+                                {
+                                    toMatchName = toMatchName.Replace("*", "");
+                                    matchedFiles = tFileList.Where(t => Path.GetFileName(t).StartsWith(toMatchName)).ToList();
+                                }
+                                else if (toMatchName.StartsWith("*"))
+                                {
+                                    toMatchName = toMatchName.Replace("*", "");
+                                    matchedFiles = tFileList.Where(t => Path.GetFileName(t).EndsWith(toMatchName)).ToList();
+                                }
+                                else
+                                {
+                                    var toMatchNames = toMatchName.Split("*", options: StringSplitOptions.RemoveEmptyEntries);
+                                    matchedFiles = tFileList.Where(t => Path.GetFileName(t).Contains(toMatchNames[0]) && Path.GetFileName(t).Contains(toMatchNames[1])).ToList();
+                                }
+                                foreach (var matchedFile in matchedFiles)
+                                {
+                                    var fileName = Path.GetFileName(matchedFile);
+                                    var outPath = Path.Combine(outputFolder, fileName);
+                                    File.Copy(matchedFile, outPath, true);
+                                    txtOutput.Text += $"{Path.GetFileName(matchedFile)} => {outPath}  ✔ 通过文件名通配符:{Path.GetFileName(toMatchName)}" + Environment.NewLine;
+                                    _logger.Information($"{matchedFile} => {outPath}  ✔ 通过文件名通配符:{toMatchName}");
+                                }
+                            }
+
+                        }
+                        if (!isWildcard)
+                        {
+                            try
+                            {
+                                var fileName = item.Trim();
+                                var inputFile = Path.Combine(txtInput.Text, fileName);
+                                if (File.Exists(inputFile))
+                                {
+                                    var inputFileLower = inputFile.ToLowerInvariant();
+                                    var matchedFiles = fileList.Where(t => t == inputFileLower);
+                                    if (matchedFiles.Count() > 1)
+                                    {
+                                        if (rb_UseNewFile.IsChecked.Value)
+                                        {
+                                            inputFile = matchedFiles.OrderByDescending(t => File.GetLastWriteTime(t)).First();
+                                        }
+                                        else
+                                        {
+                                            inputFile = matchedFiles.OrderBy(t => File.GetLastWriteTime(t)).First();
+                                        }
+                                    }
+                                    var outPath = Path.Combine(outputFolder, fileName);
+                                    File.Copy(inputFile, outPath, true);
+                                    txtOutput.Text += $"{Path.GetFileName(inputFile)} => {Path.GetFileName(outPath)}  ✔" + Environment.NewLine;
+                                    _logger.Information($"{inputFile} => {outPath}  ✔");
+                                }
+                                else
+                                {
+                                    txtOutput.Text += $"{fileName}不存在 ✘" + Environment.NewLine;
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                txtOutput.Text += $"{item}拷贝过程出现异常 ✘:{ex.Message}" + Environment.NewLine;
+                            }
+
+                        }
+                    }
+                }
+                //源文件夹填写的是一个文件,则拷贝这个文件本身
+                else
+                {
+                    var inputFile = inputFolder;
+                    var fileName = Path.GetFileName(inputFile);
+                    var outPath = Path.Combine(outputFolder, fileName);
+
+                    if (File.Exists(inputFile))
+                    {
+                        File.Copy(inputFile, outPath, true);
+                        txtOutput.Text += $"{Path.GetFileName(inputFile)} => {Path.GetFileName(outPath)}  ✔" + Environment.NewLine;
+                        _logger.Information($"{inputFile} => {outPath}  ✔");
+                    }
+                    else
+                    {
+                        txtOutput.Text += $"拷贝{fileName}失败 ✘" + Environment.NewLine;
+                    }
+                }
+                SaveHistory();
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show(ex.Message);
+            }
+        }
+
+        private void txtInput_PreviewTextInput(object sender, TextCompositionEventArgs e)
+        {
+            if (Clipboard.ContainsText())
+            {
+                e.Handled = true;
+                txtInput.Text = Clipboard.GetText();
+            }
+        }
+
+        private void SaveHistory()
+        {
+            var json = JsonSerializer.Serialize(new History()
+            {
+                InputFolder = txtInput.Text,
+                OutputFolder = txtOutFolder.Text,
+                InputFileNames = txtInputFileNames.Text
+            }, new JsonSerializerOptions { WriteIndented = true });
+            File.WriteAllText(_historyConfig, json);
+        }
+
+        private void txtInputFileNames_TextChanged(object sender, TextChangedEventArgs e)
+        {
+
+        }
+
+        public void OnHostClosing()
+        {
+            SaveHistory();
+        }
+    }
+}

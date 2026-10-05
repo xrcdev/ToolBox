@@ -1,0 +1,33 @@
+<UserControl x:Class="ToolBox.Tools.AlwaysOnTop.AlwaysOnTopPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d"
+             d:DesignHeight="450" d:DesignWidth="800">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <StackPanel Orientation="Horizontal" Margin="5">
+            <Button Content="刷新" Click="RefreshButton_Click" Padding="5,2"/>
+            <TextBlock x:Name="HotkeyHintTextBlock" VerticalAlignment="Center" Margin="10,0,0,0"/>
+        </StackPanel>
+        <DataGrid x:Name="WindowsGrid" Grid.Row="1" AutoGenerateColumns="False" IsReadOnly="False">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="标题" Binding="{Binding Title}" Width="*" IsReadOnly="True"/>
+                <DataGridTemplateColumn Header="窗口置顶" Width="120">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <CheckBox IsChecked="{Binding IsTopMost, UpdateSourceTrigger=PropertyChanged}"
+                                      Click="TopMostCheckBox_Click"
+                                      HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTextColumn Header="句柄" Binding="{Binding Handle}" Width="100" IsReadOnly="True"/>
+            </DataGrid.Columns>
+        </DataGrid>
+    </Grid>
+</UserControl>
