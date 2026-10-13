@@ -1,0 +1,89 @@
+<UserControl x:Class="ToolBox.Tools.PdfSplitter.PdfSplitterPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d"
+             d:DesignHeight="420" d:DesignWidth="640">
+    <!-- 移植自 PdfSplitter 控制台工具（iTextSharp 5）：拆分按总页数均分，合并按列表顺序拼接 -->
+    <TabControl Margin="10">
+        <!-- ==================== 拆分 ==================== -->
+        <TabItem Header="拆分">
+            <Grid Margin="10">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Text="源 PDF 文件:" Grid.Row="0" Grid.Column="0" VerticalAlignment="Center" Margin="0,0,10,10"/>
+                <TextBox x:Name="TxtSplitSourceFile" Grid.Row="0" Grid.Column="1" Margin="0,0,10,10" IsReadOnly="True"/>
+                <Button Content="浏览..." Grid.Row="0" Grid.Column="2" Width="75" Margin="0,0,0,10" Click="BtnBrowseSplitSource_Click"/>
+
+                <TextBlock Text="输出目录:" Grid.Row="1" Grid.Column="0" VerticalAlignment="Center" Margin="0,0,10,10"/>
+                <TextBox x:Name="TxtSplitOutputDir" Grid.Row="1" Grid.Column="1" Margin="0,0,10,10" IsReadOnly="True"/>
+                <Button Content="浏览..." Grid.Row="1" Grid.Column="2" Width="75" Margin="0,0,0,10" Click="BtnBrowseSplitOutput_Click"/>
+
+                <TextBlock Text="拆分份数:" Grid.Row="2" Grid.Column="0" VerticalAlignment="Center" Margin="0,0,10,10"/>
+                <TextBox x:Name="TxtSplitCount" Grid.Row="2" Grid.Column="1" Text="2" Margin="0,0,10,10"
+                         ToolTip="按总页数均分；份数大于总页数时按每册 1 页拆分"/>
+
+                <Button x:Name="BtnStartSplit" Content="开始拆分" Grid.Row="3" Grid.Column="1" Width="100" Height="30"
+                        HorizontalAlignment="Left" Click="BtnStartSplit_Click"/>
+
+                <TextBlock x:Name="TxtSplitStatus" Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="3"
+                           VerticalAlignment="Bottom" Margin="0,10" TextWrapping="Wrap"/>
+                <ProgressBar x:Name="PbSplit" Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="3" Height="18"/>
+            </Grid>
+        </TabItem>
+
+        <!-- ==================== 合并 ==================== -->
+        <TabItem Header="合并">
+            <Grid Margin="10">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Text="待合并文件（自上而下按顺序拼接）:" Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2" Margin="0,0,0,8"/>
+
+                <ListBox x:Name="MergeFilesList" Grid.Row="1" Grid.Column="0" Margin="0,0,10,0"
+                         ScrollViewer.HorizontalScrollBarVisibility="Auto"/>
+                <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Vertical">
+                    <Button Content="添加..." Width="75" Click="BtnAddMergeFile_Click"/>
+                    <Button Content="移除选中" Width="75" Margin="0,6,0,0" Click="BtnRemoveMergeFile_Click"/>
+                    <Button Content="清空" Width="75" Margin="0,6,0,0" Click="BtnClearMergeFiles_Click"/>
+                </StackPanel>
+
+                <DockPanel Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2" Margin="0,10,0,0">
+                    <TextBlock DockPanel.Dock="Left" Text="输出文件:" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                    <Button DockPanel.Dock="Right" Content="浏览..." Width="75" Margin="10,0,0,0" Click="BtnBrowseMergeOutput_Click"/>
+                    <TextBox x:Name="TxtMergeOutputFile" IsReadOnly="True" VerticalContentAlignment="Center"/>
+                </DockPanel>
+
+                <Button x:Name="BtnStartMerge" Content="开始合并" Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2"
+                        Width="100" Height="30" HorizontalAlignment="Left" Margin="0,10,0,0" Click="BtnStartMerge_Click"/>
+
+                <TextBlock x:Name="TxtMergeStatus" Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="2"
+                           Margin="0,10,0,0" TextWrapping="Wrap"/>
+                <ProgressBar x:Name="PbMerge" Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="2" Height="18" Margin="0,8,0,0"/>
+            </Grid>
+        </TabItem>
+    </TabControl>
+</UserControl>

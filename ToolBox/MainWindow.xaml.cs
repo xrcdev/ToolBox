@@ -12,10 +12,15 @@ using ToolBox.Shared;
 using ToolBox.Tools.AdjustUISize;
 using ToolBox.Tools.AlwaysOnTop;
 using ToolBox.Tools.CopyFiles;
+using ToolBox.Tools.DirSizeStat;
+using ToolBox.Tools.BatchRename;
 using ToolBox.Tools.FileSplitterAndMerge;
 using ToolBox.Tools.MyTranslator;
+using ToolBox.Tools.PdfSplitter;
+using ToolBox.Tools.QrCode;
 using ToolBox.Tools.RemoveReadonly;
 using ToolBox.Tools.Settings;
+using ToolBox.Tools.WordMemo;
 using Drawing = System.Drawing;
 using WinForms = System.Windows.Forms;
 using DataObject = System.Windows.DataObject;
@@ -64,6 +69,11 @@ public partial class MainWindow : Window, IShellHost
         _alwaysOnTopPage = new AlwaysOnTopPage { Host = this };
         var copyFilesPage = new CopyFilesPage();
         var splitterPage = new FileSplitterPage();
+        var pdfSplitterPage = new PdfSplitterPage();
+        var wordMemoPage = new WordMemoPage();
+        var dirSizeStatPage = new DirSizeStatPage();
+        var batchRenamePage = new BatchRenamePage();
+        var qrCodePage = new QrCodePage();
         var removeReadonlyPage = new RemoveReadonlyPage();
         var settingsPage = new SettingsPage { Host = this, Settings = _settings };
 
@@ -72,6 +82,11 @@ public partial class MainWindow : Window, IShellHost
         _pages.Add(_adjustUISizePage);
         _pages.Add(copyFilesPage);
         _pages.Add(splitterPage);
+        _pages.Add(pdfSplitterPage);
+        _pages.Add(wordMemoPage);
+        _pages.Add(dirSizeStatPage);
+        _pages.Add(batchRenamePage);
+        _pages.Add(qrCodePage);
         _pages.Add(removeReadonlyPage);
         _pages.Add(settingsPage);
 
@@ -80,6 +95,11 @@ public partial class MainWindow : Window, IShellHost
         _navEntries.Add(new ToolNavEntry("📐", _adjustUISizePage.Title, _adjustUISizePage));
         _navEntries.Add(new ToolNavEntry("📄", copyFilesPage.Title, copyFilesPage));
         _navEntries.Add(new ToolNavEntry("✂", splitterPage.Title, splitterPage));
+        _navEntries.Add(new ToolNavEntry("📑", pdfSplitterPage.Title, pdfSplitterPage));
+        _navEntries.Add(new ToolNavEntry("📖", wordMemoPage.Title, wordMemoPage));
+        _navEntries.Add(new ToolNavEntry("📊", dirSizeStatPage.Title, dirSizeStatPage));
+        _navEntries.Add(new ToolNavEntry("✏️", batchRenamePage.Title, batchRenamePage));
+        _navEntries.Add(new ToolNavEntry("🔳", qrCodePage.Title, qrCodePage));
         _navEntries.Add(new ToolNavEntry("🔓", removeReadonlyPage.Title, removeReadonlyPage));
         _navEntries.Add(new ToolNavEntry("⚙", settingsPage.Title, settingsPage));
 

@@ -1,0 +1,55 @@
+<UserControl x:Class="ToolBox.Tools.DirSizeStat.DirSizeStatPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d"
+             d:DesignHeight="420" d:DesignWidth="720">
+    <!-- 移植自 DirSizeStat 控制台工具（.NET FW 4.5.2）：递归统计各子目录的文件数/大小/
+         最大最小文件/最新最旧修改时间；控制台版"最小文件"恒为 0（初值 0 恒大于文件长度），
+         此处以 long.MaxValue 起始修正 -->
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="Auto"/>
+        </Grid.ColumnDefinitions>
+
+        <TextBlock Text="源目录:" Grid.Row="0" Grid.Column="0" VerticalAlignment="Center" Margin="0,0,10,10"/>
+        <TextBox x:Name="TxtSourceDir" Grid.Row="0" Grid.Column="1" Margin="0,0,10,10" IsReadOnly="True"/>
+        <Button Content="浏览..." Grid.Row="0" Grid.Column="2" Width="75" Margin="0,0,0,10" Click="BtnBrowseSource_Click"/>
+
+        <TextBlock Text="扩展名过滤:" Grid.Row="1" Grid.Column="0" VerticalAlignment="Center" Margin="0,0,10,10"/>
+        <TextBox x:Name="TxtExtensionFilter" Grid.Row="1" Grid.Column="1" Margin="0,0,10,10"
+                 ToolTip="留空统计全部文件；多个用 | 分隔，如 .pdf|.docx"/>
+
+        <Button x:Name="BtnStart" Content="开始统计" Grid.Row="2" Grid.Column="1" Width="100" Height="30"
+                HorizontalAlignment="Left" Click="BtnStart_Click"/>
+
+        <DataGrid x:Name="DirsGrid" Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="3" Margin="0,10,0,0"
+                  IsReadOnly="True" AutoGenerateColumns="False" CanUserAddRows="False">
+            <DataGrid.Columns>
+                <DataGridTextColumn Binding="{Binding DisplayName}" Header="目录" Width="*"/>
+                <DataGridTextColumn Binding="{Binding FileCount}" Header="文件数" Width="70"/>
+                <DataGridTextColumn Binding="{Binding TotalSizeDisplay}" Header="总大小" Width="90"/>
+                <DataGridTextColumn Binding="{Binding MaxSizeDisplay}" Header="最大文件" Width="90"/>
+                <DataGridTextColumn Binding="{Binding MinSizeDisplay}" Header="最小文件" Width="90"/>
+                <DataGridTextColumn Binding="{Binding NewestDisplay}" Header="最新修改" Width="130"/>
+                <DataGridTextColumn Binding="{Binding OldestDisplay}" Header="最旧修改" Width="130"/>
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <TextBlock x:Name="TxtSummary" Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="3"
+                   Margin="0,10,0,0" TextWrapping="Wrap"
+                   Foreground="{StaticResource TextSecondaryBrush}"/>
+        <ProgressBar x:Name="PbProgress" Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="3" Height="18" Margin="0,8,0,0"/>
+    </Grid>
+</UserControl>

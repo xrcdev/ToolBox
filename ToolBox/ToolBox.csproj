@@ -8,9 +8,15 @@
     <UseWPF>true</UseWPF>
     <UseWindowsForms>true</UseWindowsForms>
     <RootNamespace>ToolBox</RootNamespace>
+    <NoWarn>$(NoWarn);NU1701</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="iTextSharp" Version="5.5.13.3" NoWarn="NU1701" />
+    <PackageReference Include="QRCoder" Version="1.6.0" />
+    <PackageReference Include="Sdcb.GgufWeights.Hy-MT2-1.8B-2Bit" Version="1.0.0" />
+    <PackageReference Include="Sdcb.HyMT2Sharp" Version="2.0.0" />
+    <PackageReference Include="Serilog" Version="2.12.0" />
     <PackageReference Include="Serilog.Sinks.File" Version="5.0.0" />
     <PackageReference Include="TencentCloudSDK.Tmt" Version="3.0.1389" />
   </ItemGroup>

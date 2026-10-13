@@ -248,7 +248,8 @@
                                 BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="1"
                                 CornerRadius="8">
-                            <ContentPresenter ContentSource="SelectedContent" Margin="8"/>
+                            <!-- UIA 通过该部件名暴露选中内容，缺失会导致自动化树里看不到内容区 -->
+                            <ContentPresenter x:Name="PART_SelectedContentHost" ContentSource="SelectedContent" Margin="8"/>
                         </Border>
                     </DockPanel>
                 </ControlTemplate>
