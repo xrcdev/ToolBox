@@ -1,5 +1,6 @@
 using System;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Automation;
@@ -38,9 +39,13 @@ namespace ToolBox.Tools.MyTranslator
         private const int ClipboardCopyTimeoutMs = 1200;
         // 腾讯云 TextTranslate 单次请求上限约 2000 字符，留出余量
         private const int MaxSourceTextLength = 1800;
+        // 离线模型无该限制，但过长文本推理耗时按分钟计，仍设一个上限
+        private const int MaxOfflineSourceTextLength = 4000;
 
         private bool _isTranslating;
         private string _lastCaptureMethod = string.Empty;
+        // 离线翻译进行中非空，翻译按钮此时充当“取消”
+        private CancellationTokenSource? _offlineCts;
 
         /// <summary>外壳宿主，由 MainWindow 在构造页面后注入。</summary>
         internal IShellHost? Host { get; set; }
@@ -48,6 +53,10 @@ namespace ToolBox.Tools.MyTranslator
         public MyTranslatorPage()
         {
             InitializeComponent();
+
+            var settings = ShellSettingsStore.Load();
+            OfflineCheckBox.IsChecked = settings.TranslatorUseOffline;
+            SelectBackend(settings.TranslatorOfflineBackend);
             SetStatus("就绪");
         }
 
@@ -55,6 +64,7 @@ namespace ToolBox.Tools.MyTranslator
 
         public void OnHostClosing()
         {
+            OfflineTranslator.DisposeModel();
         }
 
         public void HandleGlobalHotkey()
@@ -89,6 +99,10 @@ namespace ToolBox.Tools.MyTranslator
                 Host?.SelectPage(this);
                 Host?.ActivateShell();
             }
+            catch (OperationCanceledException)
+            {
+                SetStatus("离线翻译已取消。");
+            }
             catch (Exception ex)
             {
                 SetStatus($"翻译失败：{ex.Message}");
@@ -104,7 +118,16 @@ namespace ToolBox.Tools.MyTranslator
         {
             if (_isTranslating)
             {
-                SetStatus("正在翻译中，请稍后。");
+                if (_offlineCts is not null)
+                {
+                    // 离线翻译进行中，按钮充当“取消”
+                    _offlineCts.Cancel();
+                    SetStatus("正在取消离线翻译...");
+                }
+                else
+                {
+                    SetStatus("正在翻译中，请稍后。");
+                }
                 return;
             }
 
@@ -120,6 +143,10 @@ namespace ToolBox.Tools.MyTranslator
             {
                 await TranslateCoreAsync(sourceText, statusSuffix: string.Empty);
             }
+            catch (OperationCanceledException)
+            {
+                SetStatus("离线翻译已取消。");
+            }
             catch (Exception ex)
             {
                 SetStatus($"翻译失败：{ex.Message}");
@@ -131,25 +158,100 @@ namespace ToolBox.Tools.MyTranslator
             }
         }
 
-        /// <summary>截断过长文本、调用翻译接口并刷新两个文本框。</summary>
+        /// <summary>截断过长文本、按离线/在线分支调用翻译并刷新两个文本框；离线时流式刷新结果。</summary>
         private async Task TranslateCoreAsync(string sourceText, string statusSuffix)
         {
-            if (sourceText.Length > MaxSourceTextLength)
+            var offline = OfflineCheckBox.IsChecked == true;
+            var maxChars = offline ? MaxOfflineSourceTextLength : MaxSourceTextLength;
+            if (sourceText.Length > maxChars)
             {
-                sourceText = sourceText[..MaxSourceTextLength];
-                SetStatus($"文本过长，已截断为 {MaxSourceTextLength} 字符，正在调用翻译接口...");
+                sourceText = sourceText[..maxChars];
+                SetStatus($"文本过长，已截断为 {maxChars} 字符，正在{(offline ? "准备离线翻译" : "调用翻译接口")}...");
             }
             else
             {
-                SetStatus("正在调用翻译接口...");
+                SetStatus(offline ? "正在准备离线翻译..." : "正在调用翻译接口...");
             }
 
             SelectedTextTextBox.Text = sourceText;
 
-            var translatedText = await Task.Run(() => TranslateText(sourceText));
+            string translatedText;
+            if (offline)
+            {
+                TranslatedTextTextBox.Text = string.Empty;
+                _offlineCts = new CancellationTokenSource();
+                TranslateButton.Content = "取消";
+                try
+                {
+                    var backend = GetSelectedBackend();
+                    translatedText = await OfflineTranslator.TranslateAsync(
+                        sourceText,
+                        backend,
+                        status => Dispatcher.Invoke(() => SetStatus(status)),
+                        partial => Dispatcher.Invoke(() => TranslatedTextTextBox.Text = partial),
+                        _offlineCts.Token);
+                }
+                finally
+                {
+                    _offlineCts.Dispose();
+                    _offlineCts = null;
+                    TranslateButton.Content = "翻译";
+                }
+            }
+            else
+            {
+                translatedText = await Task.Run(() => TranslateText(sourceText));
+            }
+
             TranslatedTextTextBox.Text = translatedText;
             SetStatus($"翻译完成。{statusSuffix}");
         }
+
+        #region 离线翻译选项
+
+        private void OfflineModeChanged(object sender, RoutedEventArgs e)
+        {
+            UpdatePersistedSettings(settings => settings.TranslatorUseOffline = OfflineCheckBox.IsChecked == true);
+        }
+
+        private void BackendChanged(object sender, SelectionChangedEventArgs e)
+        {
+            // XAML 初始化首个 ComboBoxItem 时也会触发，页面未挂载前不落盘
+            if (!IsLoaded)
+            {
+                return;
+            }
+
+            UpdatePersistedSettings(settings => settings.TranslatorOfflineBackend = GetSelectedBackend());
+        }
+
+        private static void UpdatePersistedSettings(Action<ShellSettings> update)
+        {
+            var settings = ShellSettingsStore.Load();
+            update(settings);
+            ShellSettingsStore.Save(settings);
+        }
+
+        private string GetSelectedBackend()
+        {
+            return (BackendComboBox.SelectedItem as ComboBoxItem)?.Tag as string ?? "auto";
+        }
+
+        private void SelectBackend(string backend)
+        {
+            foreach (var item in BackendComboBox.Items)
+            {
+                if (item is ComboBoxItem comboItem && (comboItem.Tag as string) == backend)
+                {
+                    BackendComboBox.SelectedItem = comboItem;
+                    return;
+                }
+            }
+
+            BackendComboBox.SelectedIndex = 0;
+        }
+
+        #endregion
 
         private async Task<string?> CaptureSelectedTextAsync()
         {

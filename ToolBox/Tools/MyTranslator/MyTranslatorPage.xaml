@@ -19,6 +19,7 @@
                     在其他程序中选中文本后按全局快捷键（可在 <Run FontWeight="Bold" Text="系统设置" /> 页自定义）：
                     优先通过系统自动化接口读取选区；失败时自动模拟复制（原剪贴板内容会还原），完成后自动切换到本页并显示翻译结果。
                     也可以直接在下方输入待翻译内容，点击 <Run FontWeight="Bold" Text="翻译" /> 按钮。
+                    勾选 <Run FontWeight="Bold" Text="离线翻译" /> 后改用本地混元翻译模型（随程序附带，无需联网与密钥）。
                 </TextBlock>
             </StackPanel>
         </Border>
@@ -32,6 +33,30 @@
 
             <GroupBox Header="待翻译文本（可手动输入）">
                 <DockPanel Margin="12">
+                    <StackPanel DockPanel.Dock="Top" Margin="0,0,0,8">
+                        <StackPanel Orientation="Horizontal">
+                            <CheckBox x:Name="OfflineCheckBox"
+                                      VerticalAlignment="Center"
+                                      Content="离线翻译（本地模型，无需联网）"
+                                      ToolTip="使用腾讯混元 Hy-MT2-1.8B 离线翻译模型（2Bit 量化，约 573MB，随程序附带）；取消勾选则走腾讯云在线翻译。"
+                                      Checked="OfflineModeChanged"
+                                      Unchecked="OfflineModeChanged" />
+                            <TextBlock Margin="16,0,6,0" VerticalAlignment="Center" Text="推理引擎" />
+                            <ComboBox x:Name="BackendComboBox"
+                                      Width="90"
+                                      IsEnabled="{Binding IsChecked, ElementName=OfflineCheckBox}"
+                                      ToolTip="自动：优先 Vulkan GPU，失败时自动回退纯 CPU 重试；CPU：强制纯 CPU，兼容性最好"
+                                      SelectionChanged="BackendChanged">
+                                <ComboBoxItem Content="自动" Tag="auto" />
+                                <ComboBoxItem Content="CPU" Tag="cpu" />
+                                <ComboBoxItem Content="Vulkan" Tag="vulkan" />
+                            </ComboBox>
+                        </StackPanel>
+                        <TextBlock Margin="0,6,0,0"
+                                   Foreground="{StaticResource TextSecondaryBrush}"
+                                   TextWrapping="Wrap"
+                                   Text="离线翻译逐字流式输出，长文本在纯 CPU 下可能需要数十秒，期间可再次点击“翻译”按钮中止。" />
+                    </StackPanel>
                     <Button x:Name="TranslateButton"
                             DockPanel.Dock="Bottom"
                             Width="110"

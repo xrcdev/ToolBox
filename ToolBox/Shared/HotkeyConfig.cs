@@ -127,6 +127,12 @@ internal sealed class ShellSettings
     public HotkeyConfig Resize { get; set; } = new() { Ctrl = true, Shift = true, Key = "2" };
     public HotkeyConfig TopMost { get; set; } = new() { Ctrl = true, Shift = true, Key = "3" };
 
+    /// <summary>划词翻译是否使用本地离线模型（HyMT2Sharp 混元翻译），否则走腾讯云在线 API。</summary>
+    public bool TranslatorUseOffline { get; set; }
+
+    /// <summary>离线翻译推理引擎：cpu（默认，兼容性最好）/ auto（自动选 GPU，失败回退 CPU）/ vulkan。</summary>
+    public string TranslatorOfflineBackend { get; set; } = "cpu";
+
     /// <summary>左侧导航选项卡的显示顺序（按页面标题，未列出的新页面排在最后）。</summary>
     public List<string> PageOrder { get; set; } = new();
 
