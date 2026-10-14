@@ -1,0 +1,54 @@
+<UserControl x:Class="ToolBox.Tools.NetDiagnostics.PortTestTab"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d"
+             d:DesignHeight="520" d:DesignWidth="880">
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <Grid Grid.Row="0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="260"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock Text="主机：" VerticalAlignment="Center"/>
+            <TextBox x:Name="TxtHost" Grid.Column="1" VerticalContentAlignment="Center"
+                     ToolTip="域名或 IP；域名会解析出全部地址逐一测试"/>
+            <TextBlock Text="端口：" Grid.Column="2" VerticalAlignment="Center" Margin="14,0,0,0"/>
+            <TextBox x:Name="TxtPorts" Grid.Column="3" VerticalContentAlignment="Center"
+                     ToolTip="支持列表与范围，用分号/逗号/空格分隔，如 80;443;8000-8010"/>
+        </Grid>
+
+        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,8,0,0">
+            <TextBlock Text="超时(ms)：" VerticalAlignment="Center"/>
+            <TextBox x:Name="TxtTimeout" Width="64" VerticalContentAlignment="Center" Text="2000"/>
+            <TextBlock Text="并发：" VerticalAlignment="Center" Margin="14,0,0,0"/>
+            <TextBox x:Name="TxtConcurrency" Width="56" VerticalContentAlignment="Center" Text="16"
+                     ToolTip="同时进行的连接测试数量，1-128"/>
+            <Button x:Name="BtnStart" Content="开始" Margin="20,0,0,0" MinWidth="72" Click="BtnStart_Click"/>
+            <Button x:Name="BtnStop" Content="取消" Margin="8,0,0,0" MinWidth="72" IsEnabled="False" Click="BtnStop_Click"/>
+        </StackPanel>
+
+        <TextBlock x:Name="TxtStatus" Grid.Row="2" Margin="0,8,0,0" TextWrapping="Wrap"
+                   Foreground="{StaticResource TextSecondaryBrush}"/>
+
+        <DataGrid x:Name="ResultGrid" Grid.Row="3" Margin="0,8,0,0"
+                  IsReadOnly="True" AutoGenerateColumns="False" CanUserAddRows="False">
+            <DataGrid.Columns>
+                <DataGridTextColumn Binding="{Binding Address}" Header="地址" Width="170"/>
+                <DataGridTextColumn Binding="{Binding Port}" Header="端口" Width="70"/>
+                <DataGridTextColumn Binding="{Binding Result}" Header="结果" Width="*"/>
+                <DataGridTextColumn Binding="{Binding Elapsed}" Header="耗时(ms)" Width="90"/>
+            </DataGrid.Columns>
+        </DataGrid>
+    </Grid>
+</UserControl>

@@ -16,6 +16,7 @@ using ToolBox.Tools.DirSizeStat;
 using ToolBox.Tools.BatchRename;
 using ToolBox.Tools.FileSplitterAndMerge;
 using ToolBox.Tools.MyTranslator;
+using ToolBox.Tools.NetDiagnostics;
 using ToolBox.Tools.PdfSplitter;
 using ToolBox.Tools.QrCode;
 using ToolBox.Tools.RemoveReadonly;
@@ -75,6 +76,7 @@ public partial class MainWindow : Window, IShellHost
         var batchRenamePage = new BatchRenamePage();
         var qrCodePage = new QrCodePage();
         var removeReadonlyPage = new RemoveReadonlyPage();
+        var netDiagPage = new NetDiagnosticsPage();
         var settingsPage = new SettingsPage { Host = this, Settings = _settings };
 
         _pages.Add(_translatorPage);
@@ -88,6 +90,7 @@ public partial class MainWindow : Window, IShellHost
         _pages.Add(batchRenamePage);
         _pages.Add(qrCodePage);
         _pages.Add(removeReadonlyPage);
+        _pages.Add(netDiagPage);
         _pages.Add(settingsPage);
 
         _navEntries.Add(new ToolNavEntry("🌐", _translatorPage.Title, _translatorPage));
@@ -101,6 +104,7 @@ public partial class MainWindow : Window, IShellHost
         _navEntries.Add(new ToolNavEntry("✏️", batchRenamePage.Title, batchRenamePage));
         _navEntries.Add(new ToolNavEntry("🔳", qrCodePage.Title, qrCodePage));
         _navEntries.Add(new ToolNavEntry("🔓", removeReadonlyPage.Title, removeReadonlyPage));
+        _navEntries.Add(new ToolNavEntry("📡", netDiagPage.Title, netDiagPage));
         _navEntries.Add(new ToolNavEntry("⚙", settingsPage.Title, settingsPage));
 
         ApplySavedPageOrder();

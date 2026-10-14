@@ -1,0 +1,31 @@
+<UserControl x:Class="ToolBox.Tools.NetDiagnostics.NetDiagnosticsPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:local="clr-namespace:ToolBox.Tools.NetDiagnostics"
+             mc:Ignorable="d"
+             d:DesignHeight="620" d:DesignWidth="920">
+    <Grid Margin="12">
+        <TabControl>
+            <TabItem Header="Ping">
+                <local:PingTab x:Name="PingPart"/>
+            </TabItem>
+            <TabItem Header="路由追踪">
+                <local:TraceRouteTab x:Name="TracePart"/>
+            </TabItem>
+            <TabItem Header="DNS 查询">
+                <local:DnsQueryTab x:Name="DnsPart"/>
+            </TabItem>
+            <TabItem Header="端口测试">
+                <local:PortTestTab x:Name="PortPart"/>
+            </TabItem>
+            <TabItem Header="本机网络">
+                <local:LocalNetTab x:Name="LocalPart"/>
+            </TabItem>
+            <TabItem Header="HTTP 调试">
+                <local:HttpDebugTab x:Name="HttpPart"/>
+            </TabItem>
+        </TabControl>
+    </Grid>
+</UserControl>

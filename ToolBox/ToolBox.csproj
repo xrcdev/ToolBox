@@ -12,6 +12,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="DnsClient" Version="1.8.0" />
     <PackageReference Include="iTextSharp" Version="5.5.13.3" NoWarn="NU1701" />
     <PackageReference Include="QRCoder" Version="1.6.0" />
     <PackageReference Include="Sdcb.GgufWeights.Hy-MT2-1.8B-2Bit" Version="1.0.0" />
